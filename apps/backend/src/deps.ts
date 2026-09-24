@@ -2,9 +2,11 @@ import type { Env } from './config/env.js';
 import type { AppBus } from './lib/bus.js';
 import type { AccessTokens } from './lib/crypto.js';
 import type { AuthService } from './modules/auth/service.js';
+import type { DeviceService } from './modules/devices/service.js';
 
 export interface Services {
   auth: AuthService;
+  devices: DeviceService;
 }
 
 /**

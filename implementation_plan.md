@@ -415,7 +415,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P2.1 Fastify app factory, Zod env config (fail fast with clear messages), pino, error handler (§7.2 error shape), `/v1/health`, Swagger, CORS allow-list from env, helmet, rate limiting.
 - [x] P2.2 Mongo plugin plus all Mongoose models from §6, including the time-series collection, TTL, and the partial unique index on open alerts. Add index-creation tests.
 - [x] P2.3 Auth module: register/login/refresh (rotation + reuse detection)/logout/me, argon2, JWT auth decorator. Integration tests.
-- [ ] P2.4 Devices module: claim (checks hwId + claim code, creates MQTT credentials), list/get/patch/delete, ownership guard on every `:id` route. Tests.
+- [x] P2.4 Devices module: claim (checks hwId + claim code, creates MQTT credentials), list/get/patch/delete, ownership guard on every `:id` route. Tests.
 
 ### Phase 3 — Realtime & device control
 - [ ] P3.1 MQTT plugin: connect with the service account, subscribe `xg/v1/+/{telemetry,reported,status,event,cmd/ack}`, validate payloads, route to services. Reconnect handling. Test with aedes.
@@ -522,6 +522,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - ADR-007: ML behind the `PlantHealthProvider` port, rule-based provider first — ships value now, zero rewrite later.
 - ADR-008: Pump commands travel inside the retained, versioned `desired` shadow (`desired.manual`) rather than a fire-and-forget `cmd`. A device that reconnects still gets the command, and there is one mechanism for all state. `cmd` is kept for one-shot actions only. Acknowledgement = `reported.appliedVersion` / `reported.manualCmdId`.
 - ADR-009: The claim response carries full broker connection info `{host, port, tls, username, password}`, and the app writes it to the device over BLE. The broker can move without reflashing firmware.
+- ADR-011: Claim = register-or-transfer. The claim code is generated once at first boot and is only readable over BLE in pairing mode (physical access). The same owner can always re-claim. Another user needs a matching claim code. Every claim rotates the device's MQTT password. Other users' devices return 404, never 403.
 - ADR-010: Manual commands work in any mode. In auto mode they are a temporary override (ON = water now, OFF = skip watering), then automation resumes. Max-runtime safety applies to every source. Rule order is in docs/ARCHITECTURE.md.
 
 ---

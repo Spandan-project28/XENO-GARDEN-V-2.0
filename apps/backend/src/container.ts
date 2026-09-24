@@ -4,6 +4,7 @@ import type { Deps } from './deps.js';
 import { AppBus } from './lib/bus.js';
 import { createAccessTokens } from './lib/crypto.js';
 import { createAuthService } from './modules/auth/service.js';
+import { createDeviceService } from './modules/devices/service.js';
 
 export interface ContainerOptions {
   now?: () => Date;
@@ -24,6 +25,8 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
 
   const auth = createAuthService({ tokens, refreshTtlDays: env.REFRESH_TOKEN_TTL_DAYS, now });
 
+  const devices = createDeviceService({ env, bus, now });
+
   const mqttState = { connected: false, devices: 0 };
 
   return {
@@ -31,7 +34,7 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     bus,
     now,
     tokens,
-    services: { auth },
+    services: { auth, devices },
     status: {
       db: isDbConnected,
       mqtt: () => mqttState.connected,

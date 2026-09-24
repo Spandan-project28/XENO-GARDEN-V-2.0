@@ -34,6 +34,7 @@ static void handleButton() {
       status_led::set(status_led::Pattern::Reset);
       status_led::loop();
       log_w("factory reset");
+      provisioning::forgetBonds();
       storage::factoryReset();
       delay(500);
       ESP.restart();

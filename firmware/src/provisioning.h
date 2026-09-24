@@ -12,5 +12,7 @@ void loop();
 void startPairing(uint32_t windowMs);
 void stopPairing();
 bool pairing();
+/** Removes stored BLE bonds (factory reset). */
+void forgetBonds();
 
 }  // namespace provisioning

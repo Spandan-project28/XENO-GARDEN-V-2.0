@@ -45,6 +45,8 @@ export interface DeviceGatewayOptions {
 }
 
 const SUBSCRIPTIONS = ['telemetry', 'reported', 'status', 'event', 'cmdAck'] as const;
+/** Device messages are small JSON documents; anything bigger is abuse or a bug. */
+export const MAX_DEVICE_MESSAGE_BYTES = 8 * 1024;
 
 export class DeviceGateway {
   private client: MqttClient | null = null;
@@ -134,6 +136,10 @@ export class DeviceGateway {
     const parsed = parseTopic(topic);
     if (!parsed) return;
     const { hardwareId, kind } = parsed;
+    if (raw.length > MAX_DEVICE_MESSAGE_BYTES) {
+      this.opts.log.warn({ hardwareId, kind, bytes: raw.length }, 'oversized mqtt message dropped');
+      return;
+    }
     const at = this.now();
     const prev = this.queues.get(hardwareId) ?? Promise.resolve();
     const next = prev

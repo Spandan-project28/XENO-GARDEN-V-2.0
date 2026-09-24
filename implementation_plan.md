@@ -487,7 +487,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P8.4 `docs/ML_INTEGRATION.md`: how to train or bring a model, the input/output contract, how to switch providers, and how to add a new health finding code to the app.
 
 ### Phase 9 — Hardening & deployment
-- [ ] P9.1 Security pass:
+- [x] P9.1 Security pass:
   - Rate limits on auth.
   - Account lockout/backoff.
   - Per-device broker ACL verified.

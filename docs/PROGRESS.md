@@ -206,3 +206,11 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 ## 2026-09-24 — P8.4 ML integration guide
 - *Changed:* `docs/ML_INTEGRATION.md`: architecture (provider port, registry fallback), the shared request/response contract field by field, finding codes and how to add new ones, a step-by-step model bring-up (features → training data export → implement `HealthModel` → register → test → deploy with `ML_SERVICE_URL`/`ML_API_KEY`), the image flow with signed URLs, and a contract-change checklist.
 - *Verified:* documentation task; the referenced commands and paths exist and pass (pytest 5/5, backend 125).
+
+## 2026-09-24 — P9.1 Security pass
+- *Changed:*
+  - `npm audit` went from 14 moderate advisories to only the accepted `decode-uri-component@0.2.2`. `uuid` is forced to ≥ 11.1.1. The decode-uri-component fix (0.5) was **tested and rejected**: it's ESM-only and breaks `query-string`'s `require()` (deep links), so it's pinned and documented.
+  - MQTT payload caps: broker 16 KB, gateway 8 KB, with a test.
+  - Firmware BLE: LE Secure Connections with bonding; `info`/`wifi_creds`/`cloud_creds` require an encrypted link; bonds are cleared on factory reset. The app retries the first encrypted read while the OS completes pairing.
+  - `docs/SECURITY.md`: asset list, controls per layer, accepted risks with reasons, a production checklist.
+- *Verified:* backend 126 tests; mqtt int 7/7 incl. the oversized drop; firmware build SUCCESS (no warnings in our sources); mobile typecheck and lint clean, 108 tests; Android export OK after the dependency changes; `query-string` parse verified.

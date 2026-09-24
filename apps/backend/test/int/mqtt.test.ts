@@ -144,6 +144,18 @@ describe('embedded broker + gateway', () => {
     await dev.endAsync();
   });
 
+  it('drops oversized payloads', async () => {
+    const pw = await claimDevice(HW);
+    const dev = await connectDevice(broker.port, HW, pw);
+    const huge = JSON.stringify({ ...telemetry, junk: 'x'.repeat(10_000) });
+    await dev.publishAsync(topicFor(HW, 'telemetry'), huge, { qos: 1 });
+    await dev.publishAsync(topicFor(HW, 'telemetry'), JSON.stringify(telemetry), { qos: 1 });
+    await waitFor(() => calls.length === 1);
+    await sleep(50);
+    expect(calls).toHaveLength(1);
+    await dev.endAsync();
+  });
+
   it('publishes the LWT when a device drops', async () => {
     const pw = await claimDevice(HW);
     const dev = await connectDevice(broker.port, HW, pw);

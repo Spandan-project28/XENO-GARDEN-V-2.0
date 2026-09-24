@@ -71,6 +71,7 @@ export async function startEmbeddedBroker(opts: EmbeddedBrokerOptions): Promise<
 
   aedes.authorizePublish = (client, packet, done) => {
     if (packet.topic.startsWith('$SYS')) return done(new Error('reserved topic'));
+    if (packet.payload && packet.payload.length > 16 * 1024) return done(new Error('payload too large'));
     if (!client) return done(null); // broker-originated (stale LWT)
     const role = roles.get(client);
     if (role?.role === 'service') return done(null);

@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "control.h"
+#include "provisioning.h"
 #include "generated_config.h"
 #include "sensors.h"
 #include "state.h"
@@ -257,6 +258,7 @@ static void handleCommand(const uint8_t* payload, unsigned int len) {
     publishEvent("calibrated", &data);
   } else if (!strcmp(type, "factory_reset")) {
     ack(cmdId, true);
+    provisioning::forgetBonds();
     storage::factoryReset();
     rebootPending = true;
     rebootAt = nowMs() + 800;

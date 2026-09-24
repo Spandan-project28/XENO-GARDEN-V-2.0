@@ -71,8 +71,21 @@ class PlxSession implements ProvisioningSession {
     return () => sub.remove();
   }
 
+  /**
+   * The info characteristic is encrypted: the first read triggers OS-level pairing ("Just Works")
+   * and may fail on some Android versions until bonding completes, so retry briefly.
+   */
   async readInfo() {
-    return bleInfoPayload.parse(JSON.parse(await this.read(C.info)));
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        return bleInfoPayload.parse(JSON.parse(await this.read(C.info)));
+      } catch (err) {
+        lastErr = err;
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+    throw lastErr;
   }
 
   async writeCloudCreds(creds: CloudCredsPayload) {

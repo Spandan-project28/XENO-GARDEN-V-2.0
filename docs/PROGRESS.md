@@ -227,3 +227,14 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - **ml**: pytest contract tests.
   - The repo moved to ESLint 9 everywhere (Expo's plugins declare ESLint ≤ 9 peers), so the dependency tree has zero invalid/missing entries.
 - *Verified locally:* full turbo pipeline 15/15 tasks; lockfile consistent (`npm install --package-lock-only` produces no diff); `npm ls --all` clean; workflow YAML parses (4 jobs). GitHub itself can only run it once the repo is pushed (human).
+
+## 2026-09-24 — P9.4 blocked, P9.5 Deployment config
+- *P9.4 BLOCKED (🧑 HUMAN):* needs an Atlas cluster, a hosting account and secrets.
+- *Changed:*
+  - `apps/backend/Dockerfile` (multi-stage, workspace-filtered `npm ci`, prune, non-root user, healthcheck) and `.dockerignore`.
+  - `fly.toml` for a single-host production setup: HTTPS API, the embedded MQTT broker exposed on 8883 with Fly TLS termination, one always-on machine, a volume for photos, and a health check. Devices get `mqtts://<app>.fly.dev:8883` from the claim, so nothing is hardcoded.
+  - `docs/DEPLOY.md`: setup A (Fly + Atlas) and B (managed broker), ML service, the env var reference, EAS env for `EXPO_PUBLIC_API_URL`, the firmware CA, and the acceptance test.
+- *Verified:*
+  - The **production build** ran locally (`NODE_ENV=production node apps/backend/dist/server.js` with Mongo): health db+mqtt OK, Swagger and metrics hidden, register works, JSON logs.
+  - The **Dockerfile npm steps were rehearsed** in a scratch copy: workspace `npm ci` → build shared+backend → prune (258 runtime packages, no dev tools) → the runtime imports resolve.
+  - `fly.toml` parses. Docker itself isn't installed here, so the image build is verified at deploy time.

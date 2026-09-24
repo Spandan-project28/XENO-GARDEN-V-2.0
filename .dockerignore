@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.turbo
+**/.expo
+**/.expo-export-check
+.data
+.git
+firmware
+services/ml/.venv
+**/*.log
+.env
+.env.*

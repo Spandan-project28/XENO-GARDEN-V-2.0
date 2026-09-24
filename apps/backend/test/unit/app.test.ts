@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { buildApp, type App } from '../../src/app.js';
 import { loadEnv } from '../../src/config/env.js';
-import { AppBus } from '../../src/lib/bus.js';
+import { createDeps } from '../../src/container.js';
 import { AppError } from '../../src/lib/errors.js';
 import type { Deps } from '../../src/deps.js';
 import { testEnv } from '../helpers/env.js';
@@ -12,9 +12,7 @@ let dbUp = true;
 
 beforeAll(async () => {
   const deps: Deps = {
-    env: testEnv(),
-    bus: new AppBus(() => {}),
-    now: () => new Date('2026-01-01T00:00:00Z'),
+    ...createDeps(testEnv(), { now: () => new Date('2026-01-01T00:00:00Z') }),
     status: { db: () => dbUp, mqtt: () => true, devicesConnected: () => 3 },
   };
   app = await buildApp(deps);

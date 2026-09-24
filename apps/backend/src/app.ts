@@ -18,6 +18,7 @@ import {
 } from 'fastify-type-provider-zod';
 import { randomUUID } from 'node:crypto';
 import type { Deps } from './deps.js';
+import { authPlugin } from './plugins/auth.js';
 import { errorsPlugin } from './plugins/errors.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { registerModules } from './modules/index.js';
@@ -60,6 +61,7 @@ export async function buildApp(deps: Deps): Promise<App> {
   app.decorate('deps', deps);
 
   await app.register(errorsPlugin);
+  await app.register(authPlugin);
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, {
     origin: env.NODE_ENV === 'production' ? env.CORS_ORIGINS : env.CORS_ORIGINS.length ? env.CORS_ORIGINS : true,

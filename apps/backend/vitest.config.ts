@@ -1,4 +1,10 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+// Share one MongoDB binary download across all workspaces (repo-root node_modules/.cache).
+process.env.MONGOMS_DOWNLOAD_DIR ??= fileURLToPath(
+  new URL('../../node_modules/.cache/mongodb-memory-server', import.meta.url),
+);
 
 export default defineConfig({
   test: {

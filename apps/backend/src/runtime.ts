@@ -105,6 +105,7 @@ export async function startRuntime(env: Env, opts: ContainerOptions & { skipDb?:
   const timers = [
     setInterval(guard('sweep', sweep), SWEEP_EVERY_MS),
     setInterval(guard('rollup', rollup), ROLLUP_EVERY_MS),
+    setInterval(guard('alerts', () => services.alertEngine.tick(deps.now())), SWEEP_EVERY_MS),
   ];
   timers.forEach((t) => t.unref());
 
@@ -119,11 +120,13 @@ export async function startRuntime(env: Env, opts: ContainerOptions & { skipDb?:
     runJobs: async () => {
       await sweep();
       await rollup();
+      await services.alertEngine.tick(deps.now());
     },
     close: async () => {
       timers.forEach(clearInterval);
       offRemoved();
       offClaimed();
+      services.alertEngine.stop();
       await realtime.close();
       await app.close().catch(() => {});
       await gateway.close();

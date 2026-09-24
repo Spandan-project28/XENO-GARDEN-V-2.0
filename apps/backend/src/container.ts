@@ -4,6 +4,8 @@ import type { Deps, RuntimeStatus } from './deps.js';
 import { AppBus } from './lib/bus.js';
 import { createAccessTokens } from './lib/crypto.js';
 import { createLogger, type AppLogger } from './lib/logger.js';
+import { createAlertEngine } from './modules/alerts/engine.js';
+import { createAlertService } from './modules/alerts/service.js';
 import { createAuthService } from './modules/auth/service.js';
 import { PublisherProxy } from './modules/control/publisher.js';
 import { createControlService } from './modules/control/service.js';
@@ -34,6 +36,12 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
   const ingest = createTelemetryIngest({ bus, log });
   const readings = createReadingQueries();
   const pumpEvents = createPumpEventService();
+  const alerts = createAlertService({ bus });
+  const alertEngine = createAlertEngine({
+    bus,
+    alerts,
+    lowMoistureMinutes: env.ALERT_LOW_MOISTURE_MINUTES,
+  });
 
   const runtime: RuntimeStatus = {
     mqttConnected: () => false,
@@ -47,7 +55,7 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     now,
     tokens,
     publisher,
-    services: { auth, devices, control, ingest, readings, pumpEvents },
+    services: { auth, devices, control, ingest, readings, pumpEvents, alerts, alertEngine },
     runtime,
     status: {
       db: isDbConnected,

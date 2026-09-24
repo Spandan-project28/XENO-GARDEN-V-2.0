@@ -2,6 +2,8 @@ import type { Env } from './config/env.js';
 import type { AppBus } from './lib/bus.js';
 import type { AccessTokens } from './lib/crypto.js';
 import type { AppLogger } from './lib/logger.js';
+import type { AlertEngine } from './modules/alerts/engine.js';
+import type { AlertService } from './modules/alerts/service.js';
 import type { AuthService } from './modules/auth/service.js';
 import type { ControlService } from './modules/control/service.js';
 import type { PublisherProxy } from './modules/control/publisher.js';
@@ -17,6 +19,8 @@ export interface Services {
   ingest: TelemetryIngest;
   readings: ReadingQueries;
   pumpEvents: PumpEventService;
+  alerts: AlertService;
+  alertEngine: AlertEngine;
 }
 
 /** Mutable runtime status, filled in by the runtime once MQTT is up. */

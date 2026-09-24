@@ -426,8 +426,8 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P3.6 Readings query: `from/to/resolution`, automatically choosing raw / 5 m bucket / hourly rollup. Hourly rollup job. Tests with seeded data.
 
 ### Phase 4 — Alerts & notifications
-- [ ] P4.1 Alert engine: rules for LOW_MOISTURE (sustained for N minutes, not on every tick), SENSOR_FAULT, DEVICE_OFFLINE (LWT, or no telemetry for 3 × interval), PUMP_MAX_RUNTIME, HIGH_TEMP. Dedupe by upserting `count`/`lastSeenAt`. Auto-resolve when the condition clears.
-- [ ] P4.2 Alert routes: list (cursor), ack, resolve. Tests, including dedup under 1000 rapid events.
+- [x] P4.1 Alert engine: rules for LOW_MOISTURE (sustained for N minutes, not on every tick), SENSOR_FAULT, DEVICE_OFFLINE (LWT, or no telemetry for 3 × interval), PUMP_MAX_RUNTIME, HIGH_TEMP. Dedupe by upserting `count`/`lastSeenAt`. Auto-resolve when the condition clears.
+- [x] P4.2 Alert routes: list (cursor), ack, resolve. Tests, including dedup under 1000 rapid events.
 - [ ] P4.3 Notifications: push-token registration, Expo push sender behind an interface (a fake in tests), per-user preferences, throttling (at most 1 push per alert per 30 min).
 
 ### Phase 5 — Simulator & end-to-end

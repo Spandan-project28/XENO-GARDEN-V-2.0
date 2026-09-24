@@ -238,3 +238,7 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - The **production build** ran locally (`NODE_ENV=production node apps/backend/dist/server.js` with Mongo): health db+mqtt OK, Swagger and metrics hidden, register works, JSON logs.
   - The **Dockerfile npm steps were rehearsed** in a scratch copy: workspace `npm ci` → build shared+backend → prune (258 runtime packages, no dev tools) → the runtime imports resolve.
   - `fly.toml` parses. Docker itself isn't installed here, so the image build is verified at deploy time.
+
+## 2026-09-24 — P9.6 blocked, P9.7 Docs
+- *P9.6 BLOCKED (🧑 HUMAN):* the real-world acceptance test on home WiFi, another WiFi and mobile data (steps in docs/DEPLOY.md).
+- *Changed:* README rewritten (what's inside, highlights, quick start incl. the simulated onboarding device, all test commands, doc index). `docs/MQTT.md` (connection, topics, shadow semantics, automation order, limits) and `docs/API.md` (endpoint overview, error codes, Socket.IO events), completing the docs listed in plan §5.

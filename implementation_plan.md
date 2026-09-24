@@ -449,7 +449,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P6.10 Device Settings: validated form on the shared Zod schema, saving with optimistic UI, and a "syncing to device…" indicator until `reported.settingsVersion` matches.
 - [x] P6.11 App Settings: theme, units, notification preferences, account.
 - [x] P6.12 Push notification registration and handling (the permission flow plus a token POST).
-- [ ] P6.13 Onboarding (BLE provisioning wizard, §9.8) against a **mock BLE transport interface**, so the flow can be tested without hardware; the real `react-native-ble-plx` transport sits behind the same interface.
+- [x] P6.13 Onboarding (BLE provisioning wizard, §9.8) against a **mock BLE transport interface**, so the flow can be tested without hardware; the real `react-native-ble-plx` transport sits behind the same interface.
 - [ ] P6.14 Plant Health screen: consumes `/plants/:id/health`, with the photo card behind a feature flag.
 - [ ] P6.15 🧑 HUMAN: create an Expo account, run `eas build --profile development --platform android`, install it on the phone, and point it at the local backend through a tunnel or the deployed backend.
 
@@ -525,6 +525,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - ADR-009: The claim response carries full broker connection info `{host, port, tls, username, password}`, and the app writes it to the device over BLE. The broker can move without reflashing firmware.
 - ADR-011: Claim = register-or-transfer. The claim code is generated once at first boot and is only readable over BLE in pairing mode (physical access). The same owner can always re-claim. Another user needs a matching claim code. Every claim rotates the device's MQTT password. Other users' devices return 404, never 403.
 - ADR-012: Mobile uses Expo SDK 57 conventions: routes in `src/app`, a JS tab navigator with a custom tab bar (from `expo-router/tabs`), AsyncStorage for prefs instead of MMKV so it works in Expo Go, custom SVG charts instead of victory-native/Skia (fewer native deps; the same look on every platform). The mobile workspace pins ESLint 9 because eslint-config-expo doesn't support ESLint 10 yet.
+- ADR-013: BLE provisioning protocol v1 lives in `@xeno/shared/ble`. UTF-8 JSON payloads; writes are split into `i/n:chunk` frames of ≤160 bytes (fits the 185-byte iOS MTU, never splits multi-byte characters). Scan results and state arrive as small single-frame notifications. The app writes cloud credentials (from the claim) before WiFi credentials, so the device can go straight to `online`.
 - ADR-010: Manual commands work in any mode. In auto mode they are a temporary override (ON = water now, OFF = skip watering), then automation resumes. Max-runtime safety applies to every source. Rule order is in docs/ARCHITECTURE.md.
 
 ---

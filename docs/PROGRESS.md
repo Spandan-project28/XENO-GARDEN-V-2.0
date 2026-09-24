@@ -218,3 +218,12 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 ## 2026-09-24 — P9.2 Observability
 - *Changed:* `lib/metrics.ts`, a dependency-free Prometheus registry. Counters: HTTP requests by method/status class, MQTT messages by kind (accepted/dropped via a new gateway `onMessage` hook), bus listener errors, alerts raised by type. Gauges: MQTT connected, devices connected, uptime, heap. `GET /v1/metrics` is guarded by `METRICS_TOKEN` (or served only outside production). Existing: request IDs (`x-request-id`, honours incoming), structured pino logs with redaction, `/v1/health` deep check (db + mqtt, 503 when degraded).
 - *Verified:* 3 metrics tests plus the realtime int test asserting MQTT telemetry is counted; backend 18 files / 129 tests; lint clean.
+
+## 2026-09-24 — P9.3 CI
+- *Changed:* `.github/workflows/ci.yml` with 4 jobs:
+  - **node**: `npm ci`, cached MongoDB test binary, `turbo build typecheck lint test`, backend integration, backend e2e with the simulator.
+  - **mobile-bundle**: expo-doctor plus `expo export --platform android`.
+  - **firmware**: PlatformIO + ziglang, `run_native.py` (the shared automation vectors in C++), `pio run -e esp32dev`.
+  - **ml**: pytest contract tests.
+  - The repo moved to ESLint 9 everywhere (Expo's plugins declare ESLint ≤ 9 peers), so the dependency tree has zero invalid/missing entries.
+- *Verified locally:* full turbo pipeline 15/15 tasks; lockfile consistent (`npm install --package-lock-only` produces no diff); `npm ls --all` clean; workflow YAML parses (4 jobs). GitHub itself can only run it once the repo is pushed (human).

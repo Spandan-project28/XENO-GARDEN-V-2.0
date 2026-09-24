@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Shared · Backend · Simulator · Mobile (unit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Cache MongoDB test binary
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/mongodb-memory-server
+          key: mongoms-${{ runner.os }}-8.2
+      - run: npm ci
+      - name: Build, typecheck, lint, unit tests
+        run: npx turbo run build typecheck lint test
+      - name: Backend integration tests (in-memory Mongo + MQTT)
+        run: npm run test:int -w @xeno/backend
+      - name: End-to-end (runtime + simulated device)
+        run: npm run test:e2e -w @xeno/backend
+
+  mobile-bundle:
+    name: Mobile bundle (Android export) + expo-doctor
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -w @xeno/shared
+      - run: npx expo-doctor
+        working-directory: apps/mobile
+      - run: npx expo export --platform android --output-dir .expo-export-check
+        working-directory: apps/mobile
+        env:
+          EXPO_PUBLIC_API_URL: https://api.example.invalid
+
+  firmware:
+    name: Firmware (logic tests + ESP32 build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            firmware/.pio/libdeps
+          key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+      - run: pip install platformio ziglang
+      - run: pio pkg install -d firmware -e esp32dev
+      - name: Logic tests (same automation vectors as TypeScript)
+        run: python firmware/test/run_native.py
+      - name: Build ESP32 firmware
+        run: pio run -d firmware -e esp32dev
+
+  ml:
+    name: ML service contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q

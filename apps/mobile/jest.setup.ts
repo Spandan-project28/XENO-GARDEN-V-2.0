@@ -35,3 +35,7 @@ jest.mock('expo-router', () => {
     Stack: Object.assign(() => null, { Screen: () => null, Protected: () => null }),
   };
 });
+
+jest.mock('@react-native-community/netinfo', () =>
+  require('@react-native-community/netinfo/jest/netinfo-mock.js'),
+);

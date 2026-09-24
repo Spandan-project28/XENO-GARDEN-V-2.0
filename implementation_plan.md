@@ -174,7 +174,8 @@ xeno_rebuilt_1/
 │   │       ├── ui/                primitives: Screen, Card, Text, Button, Switch, Gauge, Chip, Sheet, Skeleton, EmptyState, Toast…
 │   │       ├── features/          each: api hooks, components, store slice
 │   │       │   ├── auth/ devices/ telemetry/ control/ alerts/ provisioning/ insights/ settings/
-│   │       ├── lib/               api client, socket client, query client, storage, ble
+│   │       ├── components/        app-level composites that may use lib + ui (e.g. ConnectionBanner)
+│   │       ├── lib/               api client, session, socket client, query client, storage, ble
 │   │       └── config/            env (EXPO_PUBLIC_*), feature flags
 │   └── simulator/                 Node CLI: fake ESP32(s) speaking the real MQTT contract
 ├── firmware/
@@ -439,7 +440,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P6.1 Expo app scaffold (TS, Expo Router, New Architecture), `EXPO_PUBLIC_API_URL` env config per profile (`development`/`preview`/`production` in `eas.json`), path aliases, Jest set up.
 - [x] P6.2 Design system: tokens (colour/space/radius/type/motion/elevation), light + dark themes, a `useTheme` hook, and system/manual theme switching saved to storage.
 - [x] P6.3 UI primitives in `src/ui/` (see §9), each with a basic render test.
-- [ ] P6.4 Core libraries: API client (fetch/axios + automatic refresh-token rotation + typed errors), TanStack Query client with persistence, Socket.IO client that joins device rooms and patches the query cache, secure token storage, NetInfo-based offline banner.
+- [x] P6.4 Core libraries: API client (fetch/axios + automatic refresh-token rotation + typed errors), TanStack Query client with persistence, Socket.IO client that joins device rooms and patches the query cache, secure token storage, NetInfo-based offline banner.
 - [ ] P6.5 Auth feature and screens, plus auth-gated routing.
 - [ ] P6.6 Home screen: device cards with live data and skeleton/empty states.
 - [ ] P6.7 Device Detail: gauge, mode switch, pump control with pending/ack/countdown states, device health.

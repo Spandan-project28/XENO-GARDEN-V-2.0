@@ -163,8 +163,8 @@ xeno_rebuilt_1/
 │   │   │   └── lib/               logger (pino), errors, time utils
 │   │   ├── test/
 │   │   └── Dockerfile
-│   ├── mobile/
-│   │   ├── app/                   Expo Router routes (thin — only compose features)
+│   ├── mobile/                    (Expo SDK 57 convention: routes live in src/app — ADR-012)
+│   │   ├── src/app/               Expo Router routes (thin — only compose features)
 │   │   │   ├── (auth)/            sign-in, sign-up
 │   │   │   ├── (tabs)/            index(home), history, alerts, settings
 │   │   │   ├── device/[id]/       detail, settings, wifi, plant, health
@@ -436,7 +436,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P5.3 `npm run dev` at the root starts docker services, the backend in watch mode and 1 simulated device. Document it in the README.
 
 ### Phase 6 — Mobile app
-- [ ] P6.1 Expo app scaffold (TS, Expo Router, New Architecture), `EXPO_PUBLIC_API_URL` env config per profile (`development`/`preview`/`production` in `eas.json`), path aliases, Jest set up.
+- [x] P6.1 Expo app scaffold (TS, Expo Router, New Architecture), `EXPO_PUBLIC_API_URL` env config per profile (`development`/`preview`/`production` in `eas.json`), path aliases, Jest set up.
 - [ ] P6.2 Design system: tokens (colour/space/radius/type/motion/elevation), light + dark themes, a `useTheme` hook, and system/manual theme switching saved to storage.
 - [ ] P6.3 UI primitives in `src/ui/` (see §9), each with a basic render test.
 - [ ] P6.4 Core libraries: API client (fetch/axios + automatic refresh-token rotation + typed errors), TanStack Query client with persistence, Socket.IO client that joins device rooms and patches the query cache, secure token storage, NetInfo-based offline banner.
@@ -523,6 +523,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - ADR-008: Pump commands travel inside the retained, versioned `desired` shadow (`desired.manual`) rather than a fire-and-forget `cmd`. A device that reconnects still gets the command, and there is one mechanism for all state. `cmd` is kept for one-shot actions only. Acknowledgement = `reported.appliedVersion` / `reported.manualCmdId`.
 - ADR-009: The claim response carries full broker connection info `{host, port, tls, username, password}`, and the app writes it to the device over BLE. The broker can move without reflashing firmware.
 - ADR-011: Claim = register-or-transfer. The claim code is generated once at first boot and is only readable over BLE in pairing mode (physical access). The same owner can always re-claim. Another user needs a matching claim code. Every claim rotates the device's MQTT password. Other users' devices return 404, never 403.
+- ADR-012: Mobile uses Expo SDK 57 conventions: routes in `src/app`, a JS tab navigator with a custom tab bar (from `expo-router/tabs`), AsyncStorage for prefs instead of MMKV so it works in Expo Go, custom SVG charts instead of victory-native/Skia (fewer native deps; the same look on every platform). The mobile workspace pins ESLint 9 because eslint-config-expo doesn't support ESLint 10 yet.
 - ADR-010: Manual commands work in any mode. In auto mode they are a temporary override (ON = water now, OFF = skip watering), then automation resumes. Max-runtime safety applies to every source. Rule order is in docs/ARCHITECTURE.md.
 
 ---

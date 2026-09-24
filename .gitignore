@@ -24,3 +24,4 @@ infra/mosquitto/passwd
 .claude/
 .data/
 apps/mobile/.env.local
+.expo-export-check/

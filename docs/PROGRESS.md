@@ -142,3 +142,7 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Device actions: rename (sheet), change WiFi (onboarding in `mode=wifi`), a 2-step soil calibration sheet (dry in air, then wet in water, via `calibrate_*` commands), identify (blink), and remove with a confirmation dialog.
   - The form remounts only when the saved settings change, so a pump command bumping the version doesn't wipe edits.
 - *Verified:* 14 suites / 83 tests (diff, validation, duration format, save sends only the changed field and shows syncing, offline note, rename). Typecheck and lint clean.
+
+## 2026-09-24 — P6.11 App settings
+- *Changed:* `features/settings/SettingsScreen.tsx`: profile card with initials avatar and a name-edit sheet (`PATCH /me` updates the session user), theme Auto/Light/Dark and °C/°F (persisted prefs, applied live), notification master and per-alert-type toggles (optimistic, rollback on error), About (app version, server URL, data retention), sign out with confirmation (revokes the refresh-token family server-side and wipes local data). The auth feature got a public `index.ts`.
+- *Verified:* 15 suites / 86 tests; typecheck and lint clean.

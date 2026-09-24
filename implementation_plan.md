@@ -447,7 +447,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P6.8 History: real range queries, a Skia/victory-native chart with pump bands, stats.
 - [x] P6.9 Alerts: grouped list, swipe ack/resolve, filters, and deep links from push.
 - [x] P6.10 Device Settings: validated form on the shared Zod schema, saving with optimistic UI, and a "syncing to device…" indicator until `reported.settingsVersion` matches.
-- [ ] P6.11 App Settings: theme, units, notification preferences, account.
+- [x] P6.11 App Settings: theme, units, notification preferences, account.
 - [ ] P6.12 Push notification registration and handling (the permission flow plus a token POST).
 - [ ] P6.13 Onboarding (BLE provisioning wizard, §9.8) against a **mock BLE transport interface**, so the flow can be tested without hardware; the real `react-native-ble-plx` transport sits behind the same interface.
 - [ ] P6.14 Plant Health screen: consumes `/plants/:id/health`, with the photo card behind a feature flag.

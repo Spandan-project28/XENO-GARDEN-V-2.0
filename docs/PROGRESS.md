@@ -133,3 +133,12 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 ## 2026-09-24 — P6.9 Alerts
 - *Changed:* `features/alerts`: infinite cursor list (Active = open+acknowledged, All), sections by day (Today / Yesterday / date), `AlertRow` with severity colours, type icon, repeat count "×37", device, age and status, plus swipe-left actions (Seen / Resolve) via `ReanimatedSwipeable`. Tapping opens a bottom sheet with "What to do" advice per alert type, actions and a jump to the device. Push deep link `?focus=<id>` highlights the alert and opens its sheet once. Optimistic ack/resolve updates both lists and the tab badge count. Empty state "All clear", load older pages.
 - *Verified:* 13 suites / 77 tests (grouping, counts, sheet resolve removes from the active list, deep link, pagination). Typecheck and lint clean.
+
+## 2026-09-24 — P6.10 Device settings
+- *Changed:* `features/devices/DeviceSettingsScreen.tsx` (route `/device/[id]/settings`):
+  - A draft form over `desired.settings`: moisture RangeSlider (min gap from shared limits, with guidance copy), max run time, cooldown, a rain lockout toggle, heat-warning temperature and telemetry interval.
+  - A sticky Reset/Save bar appears only when there are changes; it validates the merged draft with the shared `deviceSettings` schema and sends a diff of only the changed fields.
+  - Sync status: "Syncing to device…" until the device applies the new version, "up to date" afterwards, and an offline note that changes apply on reconnect.
+  - Device actions: rename (sheet), change WiFi (onboarding in `mode=wifi`), a 2-step soil calibration sheet (dry in air, then wet in water, via `calibrate_*` commands), identify (blink), and remove with a confirmation dialog.
+  - The form remounts only when the saved settings change, so a pump command bumping the version doesn't wipe edits.
+- *Verified:* 14 suites / 83 tests (diff, validation, duration format, save sends only the changed field and shows syncing, offline note, rename). Typecheck and lint clean.

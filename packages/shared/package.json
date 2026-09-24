@@ -1,0 +1,32 @@
+{
+  "name": "@xeno/shared",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Contracts shared by backend, mobile, simulator (and mirrored by firmware): Zod schemas, MQTT topics, constants, automation rules.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./test-vectors/automation.json": "./test-vectors/automation.json"
+  },
+  "files": [
+    "dist",
+    "test-vectors"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.1"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
+}

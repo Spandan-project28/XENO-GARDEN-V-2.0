@@ -236,8 +236,8 @@ xeno_rebuilt_1/
 |---|---|---|---|---|
 | `xg/v1/{hwId}/telemetry` | device → cloud | no | 0 | `{ts, soilMoisture, soilRaw, temperature, humidity, rain, pump}` — every `telemetryIntervalSec` (default 5 s), plus immediately on pump change |
 | `xg/v1/{hwId}/reported` | device → cloud | yes | 1 | reported shadow (see §6) — sent on change + every 60 s |
-| `xg/v1/{hwId}/desired` | cloud → device | **yes** | 1 | full desired shadow with `version`; the device ignores versions ≤ the one it has applied |
-| `xg/v1/{hwId}/cmd` | cloud → device | no | 1 | `{cmdId, type: "pump"|"reboot"|"identify", ...args, expiresAt}` |
+| `xg/v1/{hwId}/desired` | cloud → device | **yes** | 1 | full desired shadow `{version, mode, settings, manual}`; `manual` is the pump command `{cmdId, pump, durationSec, issuedAt, expiresAt}`. The device ignores versions ≤ the one it has applied (ADR-008) |
+| `xg/v1/{hwId}/cmd` | cloud → device | no | 1 | `{cmdId, type: identify|reboot|pairing|calibrate_dry|calibrate_wet|factory_reset, issuedAt}` — non-pump one-shot commands |
 | `xg/v1/{hwId}/cmd/ack` | device → cloud | no | 1 | `{cmdId, ok, error?}` |
 | `xg/v1/{hwId}/status` | device → cloud (LWT) | yes | 1 | `"online"` / `"offline"` (the broker publishes `offline` if the device drops) |
 | `xg/v1/{hwId}/event` | device → cloud | no | 1 | `{type: "sensor_fault"|"pump_max_runtime"|"boot"|"wifi_changed", data}` |
@@ -259,7 +259,7 @@ GET    /v1/devices                  list mine (with shadow + latest reading)
 GET    /v1/devices/:id              / PATCH (name, plantId) / DELETE (unclaim)
 PUT    /v1/devices/:id/settings     thresholds etc. → bumps desired.version, publishes desired
 PUT    /v1/devices/:id/mode         {mode}
-POST   /v1/devices/:id/pump         {action: "ON"|"OFF", durationSec?} → {cmdId}; UI waits for reported/ack
+POST   /v1/devices/:id/pump         {action: "ON"|"OFF", durationSec?} → {cmdId, device}; sets desired.manual. UI shows pending until reported.manualCmdId === cmdId
 POST   /v1/devices/:id/identify     blink LED
 
 GET    /v1/devices/:id/readings     ?from&to&resolution=raw|5m|1h|1d  (server picks rollup; real time ranges)
@@ -290,7 +290,7 @@ Errors always use this shape: `{error: {code, message, details?}}`. Lists use cu
   - `info` (read): `{hwId, fwVersion, claimCode}`.
   - `wifi_scan` (write to trigger, notify results): list of `{ssid, rssi, secure}`.
   - `wifi_creds` (write): `{ssid, password}`, stored at the top of the NVS network list.
-  - `cloud_creds` (write): `{mqttUser, mqttPass}` (the broker host is baked into firmware).
+  - `cloud_creds` (write): `{host, port, tls, username, password}` taken from the claim response (ADR-009). A compiled-in default host is only a fallback.
   - `state` (notify): `idle|connecting_wifi|wifi_failed:<reason>|connecting_cloud|cloud_failed|online`.
 - Setup is only allowed while in pairing mode:
   - on first boot;
@@ -405,11 +405,11 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P0.4 `git init` and the first commit (only if git is available).
 
 ### Phase 1 — Shared contracts (`packages/shared`)
-- [ ] P1.1 Zod schemas: auth, device, shadow (desired/reported), settings (with the low < high refinement), reading, alert, pumpEvent, plant, healthReport. Export the inferred types.
-- [ ] P1.2 MQTT: topic builders/parsers for §7.1, plus a payload schema per topic.
-- [ ] P1.3 Constants: BLE UUIDs, default settings, alert types/severities, limits.
-- [ ] P1.4 `test-vectors/automation.json`: at least 25 cases covering the hold band, rain lockout, max runtime, cooldown, manual expiry, sensor fault and mode switching. Add a TS reference implementation `automation.ts` that passes all of them.
-- [ ] P1.5 Unit tests for everything above (100 % of the automation vectors).
+- [x] P1.1 Zod schemas: auth, device, shadow (desired/reported), settings (with the low < high refinement), reading, alert, pumpEvent, plant, healthReport. Export the inferred types.
+- [x] P1.2 MQTT: topic builders/parsers for §7.1, plus a payload schema per topic.
+- [x] P1.3 Constants: BLE UUIDs, default settings, alert types/severities, limits.
+- [x] P1.4 `test-vectors/automation.json`: at least 25 cases covering the hold band, rain lockout, max runtime, cooldown, manual expiry, sensor fault and mode switching. Add a TS reference implementation `automation.ts` that passes all of them.
+- [x] P1.5 Unit tests for everything above (100 % of the automation vectors).
 
 ### Phase 2 — Backend core
 - [ ] P2.1 Fastify app factory, Zod env config (fail fast with clear messages), pino, error handler (§7.2 error shape), `/v1/health`, Swagger, CORS allow-list from env, helmet, rate limiting.
@@ -520,6 +520,9 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - ADR-005: App gets realtime via backend Socket.IO, not direct MQTT — keeps broker credentials off phones, single authorisation point.
 - ADR-006: Shared test vectors for automation across TS (simulator/backend) and C++ (firmware) — guaranteed identical behaviour.
 - ADR-007: ML behind the `PlantHealthProvider` port, rule-based provider first — ships value now, zero rewrite later.
+- ADR-008: Pump commands travel inside the retained, versioned `desired` shadow (`desired.manual`) rather than a fire-and-forget `cmd`. A device that reconnects still gets the command, and there is one mechanism for all state. `cmd` is kept for one-shot actions only. Acknowledgement = `reported.appliedVersion` / `reported.manualCmdId`.
+- ADR-009: The claim response carries full broker connection info `{host, port, tls, username, password}`, and the app writes it to the device over BLE. The broker can move without reflashing firmware.
+- ADR-010: Manual commands work in any mode. In auto mode they are a temporary override (ON = water now, OFF = skip watering), then automation resumes. Max-runtime safety applies to every source. Rule order is in docs/ARCHITECTURE.md.
 
 ---
 

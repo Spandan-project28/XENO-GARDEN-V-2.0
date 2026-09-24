@@ -1,0 +1,34 @@
+{
+  "name": "@xeno/simulator",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fake ESP32 devices that speak the real Xeno Garden MQTT contract.",
+  "bin": {
+    "xg-sim": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "sim": "tsx src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@xeno/shared": "*",
+    "mqtt": "^5.16.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "vitest": "^5.0.1"
+  }
+}

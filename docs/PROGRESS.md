@@ -69,3 +69,11 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 ## 2026-09-24 — P4.3 Push notifications
 - *Changed:* `notifications/` — the `PushSender` interface with `ExpoPushSender` (chunks of 100, maps DeviceNotRegistered) and `NoopPushSender` (used in tests and when PUSH_ENABLED=false). Notifies on alert.opened and reminds on recurrence at most every 30 min, claiming `lastNotifiedAt` atomically so pushes are never sent twice. Respects per-type prefs, removes dead tokens, and moves a token to whichever account is signed in on the phone (max 10 per user). Routes: `POST/DELETE /me/push-tokens`, `GET/PUT /me/notification-prefs`. Push data carries a deep-link URL for the app.
 - *Verified:* 5 notification tests; full backend suite green; lint clean.
+
+## 2026-09-24 — P5.1 Simulator
+- *Changed:* `apps/simulator` (`@xeno/simulator`, CLI `npm run sim -w @xeno/simulator -- --devices 2 --scenario drying`):
+  - `SimDevice` copies the firmware at the MQTT level: status/LWT, subscribes to desired + cmd, applies desired by version, manual commands with local expiry, and the shared `evaluateAutomation` every tick (works offline).
+  - Telemetry on the interval and on pump change, with an offline buffer that flushes on reconnect. Reported state on change plus a 60 s heartbeat. cmd → ack (reboot drops and reconnects). max_runtime and sensor fault/recovered events.
+  - A deterministic garden physics model (seeded RNG, daily temperature curve) and 6 scenarios.
+  - `provision.ts` signs in or registers and claims over the public REST API, just like the app does.
+- *Verified:* 10 simulator unit tests (fake transport + fake clock); typecheck, lint and build clean.

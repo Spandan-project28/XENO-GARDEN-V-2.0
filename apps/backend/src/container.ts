@@ -9,6 +9,8 @@ import { PublisherProxy } from './modules/control/publisher.js';
 import { createControlService } from './modules/control/service.js';
 import { createDeviceService } from './modules/devices/service.js';
 import { createTelemetryIngest } from './modules/telemetry/ingest.js';
+import { createPumpEventService } from './modules/telemetry/pumpEvents.js';
+import { createReadingQueries } from './modules/telemetry/queries.js';
 
 export interface ContainerOptions {
   now?: () => Date;
@@ -30,6 +32,8 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
   const devices = createDeviceService({ env, bus, now });
   const control = createControlService({ devices, publisher, bus, now, log });
   const ingest = createTelemetryIngest({ bus, log });
+  const readings = createReadingQueries();
+  const pumpEvents = createPumpEventService();
 
   const runtime: RuntimeStatus = {
     mqttConnected: () => false,
@@ -43,7 +47,7 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     now,
     tokens,
     publisher,
-    services: { auth, devices, control, ingest },
+    services: { auth, devices, control, ingest, readings, pumpEvents },
     runtime,
     status: {
       db: isDbConnected,

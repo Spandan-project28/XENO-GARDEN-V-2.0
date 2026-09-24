@@ -421,9 +421,9 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P3.1 MQTT plugin: connect with the service account, subscribe `xg/v1/+/{telemetry,reported,status,event,cmd/ack}`, validate payloads, route to services. Reconnect handling. Test with aedes.
 - [x] P3.2 Telemetry ingest → `readings`. Update `devices.lastSeenAt/online`. Drop and log invalid payloads.
 - [x] P3.3 Shadow service: settings/mode/pump endpoints write `desired` (with version bump) and publish it retained. The `reported` handler stores device state. Pump command → `cmd` topic with `cmdId` + `expiresAt`; the ack updates status.
-- [ ] P3.4 Pump events: derive start/stop records with source and reason from reported pump transitions.
+- [x] P3.4 Pump events: derive start/stop records with source and reason from reported pump transitions.
 - [ ] P3.5 Socket.IO gateway: JWT handshake, `subscribe` with ownership check, fan out telemetry/shadow/status/alert/cmd_ack. Tests with socket.io-client.
-- [ ] P3.6 Readings query: `from/to/resolution`, automatically choosing raw / 5 m bucket / hourly rollup. Hourly rollup job. Tests with seeded data.
+- [x] P3.6 Readings query: `from/to/resolution`, automatically choosing raw / 5 m bucket / hourly rollup. Hourly rollup job. Tests with seeded data.
 
 ### Phase 4 — Alerts & notifications
 - [ ] P4.1 Alert engine: rules for LOW_MOISTURE (sustained for N minutes, not on every tick), SENSOR_FAULT, DEVICE_OFFLINE (LWT, or no telemetry for 3 × interval), PUMP_MAX_RUNTIME, HIGH_TEMP. Dedupe by upserting `count`/`lastSeenAt`. Auto-resolve when the condition clears.

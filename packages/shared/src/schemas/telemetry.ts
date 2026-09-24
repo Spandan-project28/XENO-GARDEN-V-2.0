@@ -7,6 +7,12 @@ export const readingsQuery = z
     from: isoDate,
     to: isoDate,
     resolution: z.enum(READING_RESOLUTIONS).default('auto'),
+    /** IANA time zone used for daily buckets, e.g. "Asia/Kolkata". Defaults to UTC. */
+    tz: z
+      .string()
+      .max(64)
+      .regex(/^[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+){0,2}$/, 'Invalid time zone')
+      .optional(),
   })
   .refine((q) => Date.parse(q.from) < Date.parse(q.to), {
     message: '`from` must be before `to`',

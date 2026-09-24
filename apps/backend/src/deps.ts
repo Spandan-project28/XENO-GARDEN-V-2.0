@@ -7,12 +7,16 @@ import type { ControlService } from './modules/control/service.js';
 import type { PublisherProxy } from './modules/control/publisher.js';
 import type { DeviceService } from './modules/devices/service.js';
 import type { TelemetryIngest } from './modules/telemetry/ingest.js';
+import type { PumpEventService } from './modules/telemetry/pumpEvents.js';
+import type { ReadingQueries } from './modules/telemetry/queries.js';
 
 export interface Services {
   auth: AuthService;
   devices: DeviceService;
   control: ControlService;
   ingest: TelemetryIngest;
+  readings: ReadingQueries;
+  pumpEvents: PumpEventService;
 }
 
 /** Mutable runtime status, filled in by the runtime once MQTT is up. */

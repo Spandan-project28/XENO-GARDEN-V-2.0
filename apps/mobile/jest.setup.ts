@@ -23,3 +23,15 @@ jest.mock('expo-haptics', () => ({
 
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 require('react-native-reanimated').setUpTests();
+
+jest.mock('expo-router', () => {
+  const router = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), canGoBack: jest.fn(() => true) };
+  return {
+    router,
+    useRouter: () => router,
+    useLocalSearchParams: jest.fn(() => ({})),
+    useFocusEffect: jest.fn(),
+    Link: ({ children }: { children: unknown }) => children,
+    Stack: Object.assign(() => null, { Screen: () => null, Protected: () => null }),
+  };
+});

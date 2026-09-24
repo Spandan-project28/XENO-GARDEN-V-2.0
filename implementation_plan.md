@@ -441,7 +441,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P6.2 Design system: tokens (colour/space/radius/type/motion/elevation), light + dark themes, a `useTheme` hook, and system/manual theme switching saved to storage.
 - [x] P6.3 UI primitives in `src/ui/` (see §9), each with a basic render test.
 - [x] P6.4 Core libraries: API client (fetch/axios + automatic refresh-token rotation + typed errors), TanStack Query client with persistence, Socket.IO client that joins device rooms and patches the query cache, secure token storage, NetInfo-based offline banner.
-- [ ] P6.5 Auth feature and screens, plus auth-gated routing.
+- [x] P6.5 Auth feature and screens, plus auth-gated routing.
 - [ ] P6.6 Home screen: device cards with live data and skeleton/empty states.
 - [ ] P6.7 Device Detail: gauge, mode switch, pump control with pending/ack/countdown states, device health.
 - [ ] P6.8 History: real range queries, a Skia/victory-native chart with pump bands, stats.

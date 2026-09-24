@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, type RenderOptions } from '@testing-library/react-native';
 import type { ReactElement, ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -9,18 +10,41 @@ const metrics = {
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
 };
 
-export function Providers({ children, theme = themes.dark }: { children: ReactNode; theme?: Theme }) {
+export const testQueryClient = () =>
+  new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+
+export function Providers({
+  children,
+  theme = themes.dark,
+  client,
+}: {
+  children: ReactNode;
+  theme?: Theme;
+  client?: QueryClient;
+}) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider initialMetrics={metrics}>
-        <ThemeProvider override={theme}>{children}</ThemeProvider>
+        <QueryClientProvider client={client ?? testQueryClient()}>
+          <ThemeProvider override={theme}>{children}</ThemeProvider>
+        </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
 /** Renders inside the same providers the app uses (theme, safe area, gestures). Async (RNTL 14). */
-export function renderWithProviders(ui: ReactElement, opts: RenderOptions & { theme?: Theme } = {}) {
-  const { theme, ...rest } = opts;
-  return render(ui, { wrapper: ({ children }) => <Providers theme={theme}>{children}</Providers>, ...rest });
+export function renderWithProviders(
+  ui: ReactElement,
+  opts: RenderOptions & { theme?: Theme; client?: QueryClient } = {},
+) {
+  const { theme, client, ...rest } = opts;
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <Providers theme={theme} client={client}>
+        {children}
+      </Providers>
+    ),
+    ...rest,
+  });
 }

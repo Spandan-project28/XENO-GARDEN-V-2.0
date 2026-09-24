@@ -11,6 +11,7 @@ import {
   authTokens,
   claimResponse,
   devicePublic,
+  firmwareStatus,
   healthReport,
   healthResponse,
   notificationPrefs,
@@ -63,7 +64,10 @@ export function createEndpoints(api: ApiClient) {
         api.put(`/v1/devices/${id}/mode`, { mode }, { schema: devicePublic }),
       pump: (id: string, body: PumpCommandBody) =>
         api.post(`/v1/devices/${id}/pump`, body, { schema: pumpCommandResponse }),
-      command: (id: string, type: DeviceCommandType) =>
+      firmware: (id: string) => api.get(`/v1/devices/${id}/firmware`, { schema: firmwareStatus }),
+      updateFirmware: (id: string) =>
+        api.post(`/v1/devices/${id}/firmware/update`, undefined, { schema: z.object({ cmdId: z.string() }) }),
+      command: (id: string, type: Exclude<DeviceCommandType, 'ota'>) =>
         api.post(`/v1/devices/${id}/commands`, { type }, { schema: z.object({ cmdId: z.string() }) }),
       readings: (id: string, q: { from: string; to: string; resolution?: ReadingResolution; tz?: string }) =>
         api.get(`/v1/devices/${id}/readings`, { query: q, schema: readingsResponse }),

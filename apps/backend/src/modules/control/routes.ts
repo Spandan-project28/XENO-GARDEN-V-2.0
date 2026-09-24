@@ -4,6 +4,7 @@ import {
   deviceCommandBody,
   devicePublic,
   deviceSettingsPatch,
+  firmwareStatus,
   idParams,
   pumpCommandBody,
   pumpCommandResponse,
@@ -43,5 +44,20 @@ export const controlRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: { ...common, body: deviceCommandBody, response: { 200: z.object({ cmdId: z.string() }) } },
     },
     async (req) => control.sendCommand(req.userId, req.params.id, req.body.type),
+  );
+
+  app.get(
+    '/devices/:id/firmware',
+    { schema: { ...common, response: { 200: firmwareStatus } } },
+    async (req) => control.firmwareStatus(req.userId, req.params.id),
+  );
+
+  app.post(
+    '/devices/:id/firmware/update',
+    {
+      config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+      schema: { ...common, response: { 200: z.object({ cmdId: z.string() }) } },
+    },
+    async (req) => control.updateFirmware(req.userId, req.params.id),
   );
 };

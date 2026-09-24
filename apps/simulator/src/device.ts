@@ -73,6 +73,7 @@ export class SimDevice {
   pumpReason: PumpReason = 'idle';
   cooldownUntil: number | null = null;
   sensorFault = false;
+  fwVersion = SIM_FW_VERSION;
   readonly acks: string[] = [];
 
   private readonly t: SimTransport;
@@ -167,6 +168,13 @@ export class SimDevice {
   private handleCommand(raw: string) {
     const cmd = commandPayload.parse(JSON.parse(raw));
     this.acks.push(cmd.type);
+    if (cmd.type === 'ota') {
+      // Simulated update: "install" the new version, ack, then reboot like the firmware does.
+      this.fwVersion = cmd.version ?? this.fwVersion;
+      this.t.publish(this.topic('cmdAck'), JSON.stringify({ cmdId: cmd.cmdId, ok: true }), { qos: 1 });
+      this.t.drop(1500);
+      return;
+    }
     this.t.publish(this.topic('cmdAck'), JSON.stringify({ cmdId: cmd.cmdId, ok: true }), { qos: 1 });
     if (cmd.type === 'reboot') this.t.drop(2000);
   }
@@ -255,7 +263,7 @@ export class SimDevice {
       manualRemainingSec: this.manual ? Math.max(0, Math.round((this.manual.expiresAt - now) / 1000)) : null,
       cooldownRemainingSec:
         this.cooldownUntil !== null ? Math.max(0, Math.round((this.cooldownUntil - now) / 1000)) : null,
-      fwVersion: SIM_FW_VERSION,
+      fwVersion: this.fwVersion,
       rssi: -45 - Math.round(this.rng.next() * 30),
       ssid: 'Simulated-WiFi',
       ip: null,

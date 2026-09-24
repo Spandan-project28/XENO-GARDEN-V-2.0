@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "control.h"
+#include "ota.h"
 #include "provisioning.h"
 #include "generated_config.h"
 #include "sensors.h"
@@ -262,6 +263,13 @@ static void handleCommand(const uint8_t* payload, unsigned int len) {
     storage::factoryReset();
     rebootPending = true;
     rebootAt = nowMs() + 800;
+  } else if (!strcmp(type, "ota")) {
+    String error;
+    const String url = doc["url"] | "";
+    const String sha = doc["sha256"] | "";
+    const String version = doc["version"] | "";
+    // The ack is sent when the update finishes (see loop), or now if the request is invalid.
+    if (!ota::schedule(cmdId, url, sha, version, error)) ack(cmdId, false, error.c_str());
   } else {
     ack(cmdId, false, "unknown command");
   }
@@ -345,6 +353,16 @@ void loop() {
 
   if (client.connected()) {
     client.loop();
+    ota::loop();
+    String otaCmd, otaErr;
+    bool otaOk;
+    if (ota::takeResult(otaCmd, otaOk, otaErr)) {
+      ack(otaCmd.c_str(), otaOk, otaOk ? nullptr : otaErr.c_str());
+      if (otaOk) {
+        rebootPending = true;
+        rebootAt = nowMs() + 1500;
+      }
+    }
   } else {
     StateLock lock;
     if (gState.cloudConnected) {

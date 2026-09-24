@@ -166,6 +166,14 @@ describe('SimDevice', () => {
     expect(device.acks).toEqual(['identify']);
   });
 
+  it('simulates an OTA update and reports the new version', async () => {
+    const { device, transport } = make();
+    await device.start();
+    transport.deliver('cmd', { cmdId: 'ota12345', type: 'ota', issuedAt: epoch, url: 'https://x.io/fw.bin', sha256: 'a'.repeat(64), version: '2.1.0' });
+    expect(transport.of('cmdAck')).toEqual([{ cmdId: 'ota12345', ok: true }]);
+    expect(device.reported().fwVersion).toBe('2.1.0');
+  });
+
   it('sensor_fault scenario reports null soil and raises events', async () => {
     const { device, transport } = make(scenarios.sensor_fault);
     await device.start();

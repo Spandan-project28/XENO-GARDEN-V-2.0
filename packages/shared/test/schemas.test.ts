@@ -124,6 +124,21 @@ describe('alerts query', () => {
   });
 });
 
+describe('ota command', () => {
+  it('requires https url, sha256 and version', async () => {
+    const { commandPayload } = await import('../src/index.js');
+    const base = { cmdId: 'abcd1234', type: 'ota', issuedAt: 1 };
+    expect(commandPayload.safeParse(base).success).toBe(false);
+    expect(
+      commandPayload.safeParse({ ...base, url: 'http://x.io/fw.bin', sha256: 'a'.repeat(64), version: '2.1.0' }).success,
+    ).toBe(false);
+    expect(
+      commandPayload.safeParse({ ...base, url: 'https://x.io/fw.bin', sha256: 'a'.repeat(64), version: '2.1.0' }).success,
+    ).toBe(true);
+    expect(commandPayload.safeParse({ cmdId: 'abcd1234', type: 'identify', issuedAt: 1 }).success).toBe(true);
+  });
+});
+
 describe('mqtt topics', () => {
   const hw = 'xg-3c71bf12ab34';
   it('builds and parses topics round-trip', () => {

@@ -58,11 +58,19 @@ export type ReportedPayload = z.infer<typeof reportedPayload>;
 export const desiredPayload = desiredState;
 export type DesiredPayload = z.infer<typeof desiredPayload>;
 
-export const commandPayload = z.object({
-  cmdId: z.string().min(4).max(40),
-  type: z.enum(DEVICE_COMMAND_TYPES),
-  issuedAt: z.number().int().nonnegative(),
-});
+export const commandPayload = z
+  .object({
+    cmdId: z.string().min(4).max(40),
+    type: z.enum(DEVICE_COMMAND_TYPES),
+    issuedAt: z.number().int().nonnegative(),
+    /** 'ota' only: HTTPS URL of the firmware image, its SHA-256 (hex) and version. */
+    url: z.url({ protocol: /^https$/ }).max(500).optional(),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+    version: z.string().max(32).optional(),
+  })
+  .refine((c) => c.type !== 'ota' || (!!c.url && !!c.sha256 && !!c.version), {
+    message: 'ota commands need url, sha256 and version',
+  });
 export type CommandPayload = z.infer<typeof commandPayload>;
 
 export const commandAckPayload = z.object({

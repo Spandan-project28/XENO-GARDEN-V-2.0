@@ -47,7 +47,11 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
 
   const auth = createAuthService({ tokens, refreshTtlDays: env.REFRESH_TOKEN_TTL_DAYS, now });
   const devices = createDeviceService({ env, bus, now });
-  const control = createControlService({ devices, publisher, bus, now, log });
+  const firmware =
+    env.FIRMWARE_LATEST_VERSION && env.FIRMWARE_LATEST_URL && env.FIRMWARE_LATEST_SHA256
+      ? { version: env.FIRMWARE_LATEST_VERSION, url: env.FIRMWARE_LATEST_URL, sha256: env.FIRMWARE_LATEST_SHA256 }
+      : null;
+  const control = createControlService({ devices, publisher, bus, now, log, firmware });
   const ingest = createTelemetryIngest({ bus, log });
   const readings = createReadingQueries();
   const pumpEvents = createPumpEventService();

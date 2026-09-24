@@ -37,6 +37,11 @@
 - Claiming requires the device's claim code, which is only readable over the encrypted link while in pairing mode. That is proof of physical possession. Another account's device can't be claimed remotely. The claim code survives factory reset.
 - Received broker credentials must name this device (`username == hardwareId`). Frame reassembly is capped at 2 KB.
 
+### Firmware updates
+- Devices only install images from the **server's release channel** (`FIRMWARE_LATEST_*`). Clients can't send `ota` commands with their own URL (`/commands` rejects `ota`, tested).
+- HTTPS download. The image's **SHA-256** (delivered over the authenticated MQTT link) is verified before the new slot is activated; a mismatch aborts and the old firmware stays. The ESP32 bootloader also checks image integrity.
+- Not yet: signed images or secure boot. Enable ESP32 Secure Boot v2 + flash encryption for high-assurance deployments.
+
 ### Photos
 - Uploads and downloads use **HMAC-signed, expiring URLs**: 10 min to upload, 24 h to view. Keys are whitelisted with a regex and resolved paths are checked (no traversal). The real file type is checked from magic bytes (JPEG/PNG/WebP), and uploads are capped at 5 MB. A photo can only be attached to the plant it was issued for.
 

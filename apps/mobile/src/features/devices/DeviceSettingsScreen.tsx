@@ -35,6 +35,7 @@ import {
   Toggle,
   toast,
 } from '@/ui';
+import { FirmwareRow } from './FirmwareRow';
 import { useDevice } from './hooks';
 import { useDeviceMutations } from './mutations';
 import { diffSettings, formatSeconds, validateSettings } from './settingsForm';
@@ -195,6 +196,7 @@ function SettingsForm({ device, back }: { device: DevicePublic; back: React.Reac
               subtitle="Blinks its light so you can find it"
               onPress={() => m.command.mutate('identify', { onSuccess: () => toast.info('Look for the blinking light') })}
             />
+            <FirmwareRow deviceId={device.id} online={device.online} />
           </ListGroup>
 
           <ListGroup>

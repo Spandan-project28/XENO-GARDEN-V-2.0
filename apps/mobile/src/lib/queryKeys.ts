@@ -4,6 +4,7 @@ export const qk = {
   devices: ['devices'] as const,
   device: (id: string) => ['devices', id] as const,
   readings: (id: string, rangeKey: string) => ['devices', id, 'readings', rangeKey] as const,
+  firmware: (id: string) => ['devices', id, 'firmware'] as const,
   pumpEvents: (id: string, rangeKey: string) => ['devices', id, 'pump-events', rangeKey] as const,
   alerts: (filter: string) => ['alerts', 'list', filter] as const,
   alertsAll: ['alerts'] as const,

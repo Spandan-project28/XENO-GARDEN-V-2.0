@@ -90,6 +90,7 @@ export const DEVICE_COMMAND_TYPES = [
   'calibrate_dry',
   'calibrate_wet',
   'factory_reset',
+  'ota',
 ] as const;
 export type DeviceCommandType = (typeof DEVICE_COMMAND_TYPES)[number];
 

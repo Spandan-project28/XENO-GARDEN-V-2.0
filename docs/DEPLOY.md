@@ -74,6 +74,14 @@ Then set on the API: `ML_SERVICE_URL=https://ml.example.com`, `ML_API_KEY=...`, 
 | `ALERT_LOW_MOISTURE_MINUTES` | | 10 | Dry-soil alert delay |
 | `PUSH_ENABLED`, `EXPO_ACCESS_TOKEN` | | true / – | Push notifications |
 | `ML_SERVICE_URL`, `ML_API_KEY`, `ML_MODEL_NAME` | | – | Plant-health model service |
+| `FIRMWARE_LATEST_VERSION`, `FIRMWARE_LATEST_URL`, `FIRMWARE_LATEST_SHA256` | | – | OTA release channel (all three together; HTTPS URL, lowercase SHA-256) |
+
+## Releasing firmware (OTA)
+
+1. Bump `XG_FW_VERSION` in `firmware/include/config.h` and build: `pio run -d firmware -e esp32dev`.
+2. Upload `firmware/.pio/build/esp32dev/firmware.bin` to any HTTPS file host (GitHub Releases, S3/R2, your server).
+3. `sha256sum firmware.bin`, then set `FIRMWARE_LATEST_VERSION/URL/SHA256` on the API and restart.
+4. The app shows **Update** under Device → Settings → Firmware.
 
 ## Acceptance test (the core promise)
 

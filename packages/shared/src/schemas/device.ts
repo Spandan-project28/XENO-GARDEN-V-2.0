@@ -178,5 +178,14 @@ export const pumpCommandResponse = z.object({
 });
 export type PumpCommandResponse = z.infer<typeof pumpCommandResponse>;
 
-export const deviceCommandBody = z.object({ type: z.enum(DEVICE_COMMAND_TYPES) });
+/** One-shot commands the app may send directly ('ota' goes through /firmware/update instead). */
+export const deviceCommandBody = z.object({ type: z.enum(DEVICE_COMMAND_TYPES).exclude(['ota']) });
 export type DeviceCommandBody = z.infer<typeof deviceCommandBody>;
+
+/** Firmware release channel as seen by the app for one device. */
+export const firmwareStatus = z.object({
+  current: z.string().nullable(),
+  latest: z.string().nullable(),
+  updateAvailable: z.boolean(),
+});
+export type FirmwareStatus = z.infer<typeof firmwareStatus>;

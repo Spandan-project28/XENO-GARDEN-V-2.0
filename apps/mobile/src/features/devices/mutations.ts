@@ -44,7 +44,7 @@ export function useDeviceMutations(id: string) {
   });
 
   const command = useMutation({
-    mutationFn: (type: DeviceCommandType) => api.devices.command(id, type),
+    mutationFn: (type: Exclude<DeviceCommandType, 'ota'>) => api.devices.command(id, type),
     onError: (err) => toast.error('Command failed', errorMessage(err)),
   });
 

@@ -33,7 +33,14 @@ export interface ControlLogger {
   warn: (obj: object, msg: string) => void;
 }
 
+export interface FirmwareRelease {
+  version: string;
+  url: string;
+  sha256: string;
+}
+
 export interface ControlServiceDeps {
+  firmware?: FirmwareRelease | null;
   devices: DeviceService;
   publisher: DevicePublisher;
   bus: AppBus;
@@ -41,7 +48,7 @@ export interface ControlServiceDeps {
   log: ControlLogger;
 }
 
-export function createControlService({ devices, publisher, bus, now, log }: ControlServiceDeps) {
+export function createControlService({ devices, publisher, bus, now, log, firmware = null }: ControlServiceDeps) {
   /**
    * Compare-and-swap update of `desired`: recomputes from the latest document and retries if
    * another writer bumped the version in between. Publishes the result.
@@ -138,6 +145,36 @@ export function createControlService({ devices, publisher, bus, now, log }: Cont
       requireOnline(d);
       const cmdId = nanoid(12);
       await publisher.publishCommand(d.hardwareId, { cmdId, type, issuedAt: now().getTime() });
+      return { cmdId };
+    },
+
+    async firmwareStatus(userId: string, id: string) {
+      const d = await devices.getOwned(userId, id);
+      const current = d.firmwareVersion;
+      const latest = firmware?.version ?? null;
+      return { current, latest, updateAvailable: !!latest && !!current && latest !== current };
+    },
+
+    /**
+     * Tells the device to install the server's current firmware release. The device downloads it
+     * over HTTPS, verifies the SHA-256 before switching, and acks the result on cmd/ack.
+     */
+    async updateFirmware(userId: string, id: string): Promise<{ cmdId: string }> {
+      if (!firmware) throw new AppError('NOT_FOUND', 'No firmware release is configured on this server');
+      const d = await devices.getOwned(userId, id);
+      requireOnline(d);
+      if (d.firmwareVersion === firmware.version) {
+        throw new AppError('CONFLICT', `Already on firmware ${firmware.version}`);
+      }
+      const cmdId = nanoid(12);
+      await publisher.publishCommand(d.hardwareId, {
+        cmdId,
+        type: 'ota',
+        issuedAt: now().getTime(),
+        url: firmware.url,
+        sha256: firmware.sha256,
+        version: firmware.version,
+      });
       return { cmdId };
     },
 

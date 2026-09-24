@@ -242,3 +242,13 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 ## 2026-09-24 — P9.6 blocked, P9.7 Docs
 - *P9.6 BLOCKED (🧑 HUMAN):* the real-world acceptance test on home WiFi, another WiFi and mobile data (steps in docs/DEPLOY.md).
 - *Changed:* README rewritten (what's inside, highlights, quick start incl. the simulated onboarding device, all test commands, doc index). `docs/MQTT.md` (connection, topics, shadow semantics, automation order, limits) and `docs/API.md` (endpoint overview, error codes, Socket.IO events), completing the docs listed in plan §5.
+
+## 2026-09-24 — P7.10 OTA firmware updates
+- *Changed:*
+  - Shared: `ota` command type with an `https` url + `sha256` + version (refinement tested); `deviceCommandBody` excludes `ota`; `firmwareStatus`.
+  - Backend: a release channel from env (all-or-nothing validation); `GET /devices/:id/firmware` (current/latest/updateAvailable) and `POST /devices/:id/firmware/update` (online-only, refuses the same version, 5/min).
+  - Firmware `ota.cpp`: HTTPS download streamed into the OTA slot with incremental mbedtls SHA-256, activation only on match, the ack carries the result, reboot on success. The control task keeps running.
+  - Simulator: simulated OTA (acks, reports the new version, reboots).
+  - Mobile: `FirmwareRow` in Device Settings (version, "Update" badge, confirm dialog).
+  - Docs: MQTT, DEPLOY (release steps, env), SECURITY (OTA guarantees and limits). ADR-015.
+- *Verified:* shared 62; backend 19 files / 132 tests (OTA sends the release command, refuses offline/current/no-release, blocks client-supplied OTA URLs); simulator 11; mobile 22 suites / 110; firmware build SUCCESS (RAM 18.2 %, flash 63.3 %, 0 warnings in our code); native logic 218/218.

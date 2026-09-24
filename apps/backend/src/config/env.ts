@@ -52,6 +52,11 @@ export const envSchema = z
     EXPO_ACCESS_TOKEN: z.string().optional(),
     PUSH_ENABLED: bool.default(true),
 
+    /** Firmware release channel for OTA updates (all three or none). */
+    FIRMWARE_LATEST_VERSION: z.string().max(32).optional(),
+    FIRMWARE_LATEST_URL: z.url({ protocol: /^https$/ }).optional(),
+    FIRMWARE_LATEST_SHA256: z.string().regex(/^[0-9a-f]{64}$/, 'lowercase hex SHA-256').optional(),
+
     /** Bearer token for GET /v1/metrics. Without it, metrics are only served outside production. */
     METRICS_TOKEN: z.string().min(16).optional(),
 
@@ -65,6 +70,14 @@ export const envSchema = z
     PUBLIC_URL: z.string().optional(),
   })
   .superRefine((env, ctx) => {
+    const fw = [env.FIRMWARE_LATEST_VERSION, env.FIRMWARE_LATEST_URL, env.FIRMWARE_LATEST_SHA256];
+    if (fw.some(Boolean) && !fw.every(Boolean)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['FIRMWARE_LATEST_URL'],
+        message: 'Set FIRMWARE_LATEST_VERSION, FIRMWARE_LATEST_URL and FIRMWARE_LATEST_SHA256 together',
+      });
+    }
     if (!env.MQTT_EMBEDDED && !env.MQTT_URL) {
       ctx.addIssue({
         code: 'custom',

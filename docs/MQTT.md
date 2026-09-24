@@ -20,7 +20,7 @@ Source of truth: `packages/shared/src/mqtt` (Zod schemas + topic helpers). The f
 | `reported` | device → cloud | yes | 0/1 | `{appliedVersion, mode, pump, pumpReason, manualCmdId, manualRemainingSec, cooldownRemainingSec, fwVersion, rssi, ssid, ip, uptimeSec, heapFree, soilCalibrated}`. Sent on change and every 60 s. |
 | `event` | device → cloud | no | 0/1 | `{type, ts?, data}`, where type is one of `boot`, `sensor_fault`, `sensor_recovered`, `max_runtime`, `wifi_changed`, `calibrated` |
 | `desired` | cloud → device | **yes** | 1 | `{version, mode, settings, manual}` (see below). An empty payload means the device was unclaimed. |
-| `cmd` | cloud → device | no | 1 | `{cmdId, type, issuedAt}`, where type is one of `identify`, `reboot`, `pairing`, `calibrate_dry`, `calibrate_wet`, `factory_reset` |
+| `cmd` | cloud → device | no | 1 | `{cmdId, type, issuedAt}`, where type is one of `identify`, `reboot`, `pairing`, `calibrate_dry`, `calibrate_wet`, `factory_reset`, `ota`. `ota` also carries `{url (https), sha256, version}` from the server's release channel. |
 | `cmd/ack` | device → cloud | no | 0/1 | `{cmdId, ok, error?}` |
 
 ### `desired` (device shadow)
@@ -43,6 +43,10 @@ Source of truth: `packages/shared/src/mqtt` (Zod schemas + topic helpers). The f
 ## Automation (runs on the device)
 
 Rules, in order: max runtime → manual command → manual mode idle → sensor fault → rain → cooldown → moisture thresholds with hysteresis. Defined once in TypeScript (`packages/shared/src/automation`), ported to C++ (`firmware/lib/xg_core`), and both are checked against `packages/shared/test-vectors/automation.json`.
+
+## Firmware updates (OTA)
+
+The server sends `cmd` type `ota` with the release's HTTPS URL, SHA-256 and version. The client app can't supply these: `POST /devices/:id/commands` refuses `ota`, and `POST /devices/:id/firmware/update` uses the server's `FIRMWARE_LATEST_*` settings. The device streams the image into its inactive OTA slot while hashing it, activates it only if the SHA-256 matches, acks on `cmd/ack`, and reboots. The pump safety task keeps running during the download.
 
 ## Limits
 

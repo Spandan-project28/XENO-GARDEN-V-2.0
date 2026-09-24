@@ -476,7 +476,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P7.7 Shadow state: apply desired with a version check, persist settings to NVS (so settings survive reboot and offline periods), publish reported on change.
 - [x] P7.8 BLE provisioning service (§7.4) with NimBLE: pairing-mode rules, WiFi scan, creds, cloud creds, state notifications. The claim code is generated at first boot.
 - [x] P7.9 Status LED patterns: pairing, connecting, online, error. BOOT-button long-press enters pairing mode, and a very long press does a factory reset.
-- [ ] P7.10 Optional stretch: OTA firmware update via an MQTT command pointing at an HTTPS URL.
+- [x] P7.10 Optional stretch: OTA firmware update via an MQTT command pointing at an HTTPS URL.
 - [~] BLOCKED (needs the physical board) P7.11 🧑 HUMAN: flash the board, run the in-app soil calibration (dry in air, then wet in water), and verify the relay polarity and the whole onboarding flow on real hardware.
 - [x] P7.12 `docs/HARDWARE.md`: final wiring table, power (solar + buck + relay isolation from v1), calibration steps. pH removed.
 
@@ -527,6 +527,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - ADR-012: Mobile uses Expo SDK 57 conventions: routes in `src/app`, a JS tab navigator with a custom tab bar (from `expo-router/tabs`), AsyncStorage for prefs instead of MMKV so it works in Expo Go, custom SVG charts instead of victory-native/Skia (fewer native deps; the same look on every platform). The repo uses ESLint 9 because eslint-config-expo doesn't support ESLint 10 yet.
 - ADR-013: BLE provisioning protocol v1 lives in `@xeno/shared/ble`. UTF-8 JSON payloads; writes are split into `i/n:chunk` frames of ≤160 bytes (fits the 185-byte iOS MTU, never splits multi-byte characters). Scan results and state arrive as small single-frame notifications. The app writes cloud credentials (from the claim) before WiFi credentials, so the device can go straight to `online`.
 - ADR-014: Firmware logic lives in `firmware/lib/xg_core` (no Arduino headers) and is tested on the host with a small runner compiled by zig c++ (`pip install ziglang`), because PlatformIO's `native` platform needs a system gcc that Windows lacks. It runs the same `automation.json` vectors as the TypeScript engine. Safety-critical control runs in its own FreeRTOS task on core 1, so network I/O can never delay a pump cut-off.
+- ADR-015: OTA uses a server-side release channel (env `FIRMWARE_LATEST_VERSION/URL/SHA256`). Clients can only say "update this device", never supply a URL. Devices verify the SHA-256 while streaming into the inactive slot before activating it. Secure boot and signing are left for high-assurance deployments.
 - ADR-010: Manual commands work in any mode. In auto mode they are a temporary override (ON = water now, OFF = skip watering), then automation resumes. Max-runtime safety applies to every source. Rule order is in docs/ARCHITECTURE.md.
 
 ---

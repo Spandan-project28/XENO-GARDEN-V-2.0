@@ -110,3 +110,12 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 ## 2026-09-24 — P6.6 Home screen
 - *Changed:* `features/devices/HomeScreen.tsx`: greeting header with an add-device button, ConnectionBanner, skeletons, error banner with retry, an inviting empty state that starts onboarding, a garden overview (online / watering / thirsty), animated staggered `DeviceCard`s (moisture gauge with threshold band, happy/thirsty state, a human pump-reason line, temperature/humidity/rain pills, status badge Online/Watering/Offline · last seen, Auto/Manual badge). Live updates via `useLiveDevices`. `lib/format.ts` (units, relative time, countdowns, reason copy, greetings, moisture state), `lib/useNow`, `features/devices/hooks.ts` (`useDevices`, `useDevice` seeded from the list cache, `pumpState`). Test fixtures and a NetInfo jest mock.
 - *Verified:* 52 mobile tests (format + 4 Home states: empty → onboarding, cards/overview/offline/thirsty/navigation, watering, error). Typecheck and lint clean.
+
+## 2026-09-24 — P6.7 Device detail
+- *Changed:* `features/devices/DeviceDetailScreen.tsx` (route `/device/[id]`):
+  - Offline banner explaining that the device keeps working. A hero glass card with the status badge, a "Syncing to device…" badge while desired ≠ applied, the 240 px moisture gauge with target band, and a human reason line.
+  - Auto/Manual SegmentedControl with an optimistic update and rollback, plus plain-language mode copy.
+  - `PumpControl`: a big round button with ripples while watering, duration chips capped at the device safety limit, and "Starting…/Stopping…" until the device reports `appliedVersion ≥` the command's version. After 20 s without confirmation it says so honestly instead of pretending. A live countdown from `manualRemainingSec`, and it is disabled offline.
+  - Metrics tiles; a 24 h sparkline (5-minute buckets plus live points) linking to History; last watering and weekly sessions from pump events; a plant-health entry (flagged); device info (WiFi signal quality, firmware, last seen, hardware ID).
+  - `useDeviceMutations` (mode/pump/settings/rename/command/remove with cache updates and toasts). `ui/charts/path.ts` (segments with gaps, smooth paths, domains) and `Sparkline`.
+- *Verified:* 66 mobile tests (pump UI derivation incl. confirmation by version, countdown, never-confirmed; chart geometry; detail screen render/optimistic mode/pump command/offline). Typecheck and lint clean (the React Compiler purity rule caught `Date.now()` during render; fixed).

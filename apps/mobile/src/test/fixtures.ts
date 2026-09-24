@@ -1,6 +1,6 @@
 import { defaultSettings, type DevicePublic, type ReportedState } from '@xeno/shared';
 
-export const reported = (over: Partial<ReportedState> = {}): ReportedState & { at: string } => ({
+export const reported = (over: Partial<ReportedState & { at: string }> = {}): ReportedState & { at: string } => ({
   appliedVersion: 1,
   mode: 'auto',
   pump: false,

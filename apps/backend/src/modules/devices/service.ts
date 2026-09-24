@@ -112,7 +112,7 @@ export function createDeviceService({ env, bus, now }: DeviceServiceDeps) {
               ...(body.name && sameOwner ? { name: body.name } : {}),
             },
           },
-          { new: true },
+          { returnDocument: 'after' },
         ).lean<DeviceDoc>();
         if (!updated) throw notFound('Device');
         device = updated;
@@ -155,7 +155,7 @@ export function createDeviceService({ env, bus, now }: DeviceServiceDeps) {
       const $set: Record<string, unknown> = {};
       if (body.name !== undefined) $set.name = body.name;
       if (body.plantId !== undefined) $set.plantId = body.plantId;
-      const d = await Device.findByIdAndUpdate(id, { $set }, { new: true }).lean<DeviceDoc>();
+      const d = await Device.findByIdAndUpdate(id, { $set }, { returnDocument: 'after' }).lean<DeviceDoc>();
       if (!d) throw notFound('Device');
       return toDevicePublic(d);
     },

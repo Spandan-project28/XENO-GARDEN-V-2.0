@@ -57,7 +57,7 @@ export function createControlService({ devices, publisher, bus, now, log }: Cont
       const updated = await Device.findOneAndUpdate(
         { _id: d._id, 'desired.version': d.desired.version },
         { $set: { desired: next } },
-        { new: true },
+        { returnDocument: 'after' },
       ).lean<DeviceDoc>();
       if (!updated) {
         await backoff(attempt);
@@ -147,7 +147,7 @@ export function createControlService({ devices, publisher, bus, now, log }: Cont
       const d = await Device.findOneAndUpdate(
         { hardwareId },
         { $set: { reported: { ...reported, at }, firmwareVersion: reported.fwVersion, lastSeenAt: at } },
-        { new: true },
+        { returnDocument: 'after' },
       ).lean<DeviceDoc>();
       if (!d) return null;
       bus.emit('device.reported', {
@@ -165,7 +165,7 @@ export function createControlService({ devices, publisher, bus, now, log }: Cont
         const cleared = await Device.findOneAndUpdate(
           { _id: d._id, 'desired.version': d.desired.version },
           { $set: { desired: next } },
-          { new: true },
+          { returnDocument: 'after' },
         ).lean<DeviceDoc>();
         if (cleared) await publish(cleared);
       }

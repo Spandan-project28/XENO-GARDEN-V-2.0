@@ -22,3 +22,5 @@ __pycache__/
 uploads/
 infra/mosquitto/passwd
 .claude/
+.data/
+apps/mobile/.env.local

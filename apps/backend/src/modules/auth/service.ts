@@ -125,7 +125,7 @@ export function createAuthService({ tokens, refreshTtlDays, now }: AuthServiceDe
     },
 
     async updateUser(userId: string, patch: { name?: string }): Promise<UserPublic> {
-      const user = await User.findByIdAndUpdate(userId, { $set: patch }, { new: true });
+      const user = await User.findByIdAndUpdate(userId, { $set: patch }, { returnDocument: 'after' });
       if (!user) throw notFound('User');
       return toUserPublic(user);
     },

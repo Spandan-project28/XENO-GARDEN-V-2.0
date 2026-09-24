@@ -16,7 +16,9 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "dev": "node tools/dev.mjs",
+    "test:all": "turbo run test && npm run test:int -w @xeno/backend && npm run test:e2e -w @xeno/backend"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

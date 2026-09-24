@@ -63,7 +63,7 @@ export function createAlertService({ bus }: { bus: AppBus }) {
         },
         $inc: { count: 1 },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean<AlertDoc>();
   }
 
@@ -107,7 +107,7 @@ export function createAlertService({ bus }: { bus: AppBus }) {
       const doc = await Alert.findOneAndUpdate(
         { deviceId, type, active: true },
         { $set: { status: 'resolved', active: false, resolvedAt: at } },
-        { new: true },
+        { returnDocument: 'after' },
       ).lean<AlertDoc>();
       if (!doc) return null;
       const alert = toAlertPublic(doc, await deviceName(doc.deviceId));
@@ -168,7 +168,7 @@ export function createAlertService({ bus }: { bus: AppBus }) {
           ? { _id: id, ownerId: userId, status: 'open' }
           : { _id: id, ownerId: userId, active: true };
       const doc =
-        (await Alert.findOneAndUpdate(filter, { $set }, { new: true }).lean<AlertDoc>()) ??
+        (await Alert.findOneAndUpdate(filter, { $set }, { returnDocument: 'after' }).lean<AlertDoc>()) ??
         (await Alert.findOne({ _id: id, ownerId: userId }).lean<AlertDoc>());
       if (!doc) throw notFound('Alert');
       const alert = toAlertPublic(doc, await deviceName(doc.deviceId));

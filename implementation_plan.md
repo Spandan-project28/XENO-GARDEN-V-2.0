@@ -433,7 +433,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 ### Phase 5 — Simulator & end-to-end
 - [x] P5.1 `apps/simulator` CLI: multiple devices, all scenarios from §8, using the shared automation implementation. It also responds to desired/cmd messages exactly as the firmware will.
 - [x] P5.2 E2E test suite: register → claim a simulated device → receive telemetry over the socket → switch to manual → pump ON 1 min → ack → auto-expire → drying scenario produces exactly 1 deduped alert → device offline produces an alert.
-- [ ] P5.3 `npm run dev` at the root starts docker services, the backend in watch mode and 1 simulated device. Document it in the README.
+- [x] P5.3 `npm run dev` at the root starts docker services, the backend in watch mode and 1 simulated device. Document it in the README.
 
 ### Phase 6 — Mobile app
 - [ ] P6.1 Expo app scaffold (TS, Expo Router, New Architecture), `EXPO_PUBLIC_API_URL` env config per profile (`development`/`preview`/`production` in `eas.json`), path aliases, Jest set up.

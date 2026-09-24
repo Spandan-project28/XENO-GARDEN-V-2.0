@@ -444,7 +444,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P6.5 Auth feature and screens, plus auth-gated routing.
 - [x] P6.6 Home screen: device cards with live data and skeleton/empty states.
 - [x] P6.7 Device Detail: gauge, mode switch, pump control with pending/ack/countdown states, device health.
-- [ ] P6.8 History: real range queries, a Skia/victory-native chart with pump bands, stats.
+- [x] P6.8 History: real range queries, a Skia/victory-native chart with pump bands, stats.
 - [ ] P6.9 Alerts: grouped list, swipe ack/resolve, filters, and deep links from push.
 - [ ] P6.10 Device Settings: validated form on the shared Zod schema, saving with optimistic UI, and a "syncing to device…" indicator until `reported.settingsVersion` matches.
 - [ ] P6.11 App Settings: theme, units, notification preferences, account.

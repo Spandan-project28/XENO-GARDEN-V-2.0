@@ -119,3 +119,13 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Metrics tiles; a 24 h sparkline (5-minute buckets plus live points) linking to History; last watering and weekly sessions from pump events; a plant-health entry (flagged); device info (WiFi signal quality, firmware, last seen, hardware ID).
   - `useDeviceMutations` (mode/pump/settings/rename/command/remove with cache updates and toasts). `ui/charts/path.ts` (segments with gaps, smooth paths, domains) and `Sparkline`.
 - *Verified:* 66 mobile tests (pump UI derivation incl. confirmation by version, countdown, never-confirmed; chart geometry; detail screen render/optimistic mode/pump command/offline). Typecheck and lint clean (the React Compiler purity rule caught `Date.now()` during render; fixed).
+
+## 2026-09-24 — P6.8 History
+- *Changed:* `features/history`:
+  - Range chips 24H/7D/30D/90D map to real `from/to` windows (aligned to 5 min) with the phone's IANA time zone sent for daily buckets.
+  - Device chips (remembered in prefs; `?deviceId=` from the detail screen) and a metric toggle (soil/temperature/air humidity, °F aware).
+  - `ui/charts/LineChart` (SVG): gridlines + axis labels, gradient area, gaps for missing data, dashed threshold lines (water below / stop above), shaded pump-running bands from pump sessions, and a touch-and-drag scrubber with a value/time readout (gesture-handler + `scheduleOnRN`).
+  - Stats tiles (avg soil, avg temp, total watering) and a list of watering sessions with source, duration and stop reason. Empty/error/skeleton states.
+  - The devices feature got a public `index.ts`, so features only import each other's public API.
+- *Lesson:* my test output filter showed only "Tests:" and hid a suite that failed to load. From now on I check the "Test Suites:" line too.
+- *Verified:* 12 suites / 71 tests (range math, real window sent to the API, range and device switching, sessions list, empty state). Typecheck and lint clean.

@@ -252,3 +252,8 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Mobile: `FirmwareRow` in Device Settings (version, "Update" badge, confirm dialog).
   - Docs: MQTT, DEPLOY (release steps, env), SECURITY (OTA guarantees and limits). ADR-015.
 - *Verified:* shared 62; backend 19 files / 132 tests (OTA sends the release command, refuses offline/current/no-release, blocks client-supplied OTA URLs); simulator 11; mobile 22 suites / 110; firmware build SUCCESS (RAM 18.2 %, flash 63.3 %, 0 warnings in our code); native logic 218/218.
+
+## 2026-09-24 — Final verification (all tasks done or human-blocked)
+- Fresh run with no caches: turbo build/typecheck/lint/test **15/15**; backend integration **96**, e2e **7/7** (unit+int+e2e = 132); mobile **22 suites / 110 tests**, typecheck and lint clean, expo-doctor **21/21** (fixed an `@types/jest` SDK mismatch found in this pass), Android export 7.7 MB; shared **62**; simulator **11**; ML pytest **5/5**; firmware native **218/218** checks, ESP32 build SUCCESS; `npm ls --all` clean; `npm audit` shows only the documented accepted advisory.
+- `npm run dev` smoke test: this PC's LAN address had changed since the first run (10.107.24.48 → 192.168.0.103) and the stack adapted automatically. The simulated device connected, applied its config and streamed data; health db+mqtt OK.
+- **Remaining human steps** (§14): P6.15 Expo account + dev build on a phone; P7.11 flash and calibrate the real board; P9.4 cloud accounts (Atlas + Fly) and secrets; P9.6 real-world multi-network acceptance test. Step-by-step instructions are in docs/DEPLOY.md and docs/HARDWARE.md.

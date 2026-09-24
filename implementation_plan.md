@@ -388,8 +388,8 @@ Run from the repo root unless noted. The loop uses whichever of these apply to t
 | End-to-end with sim | `npm -w apps/backend run test:e2e` (boots app + aedes + simulator scenario, asserts shadow/alerts) | Phase 5+ |
 | Mobile bundle check | `npx -w apps/mobile expo export --platform android --output-dir .expo-export-check` (must succeed) and `npx -w apps/mobile expo-doctor` | mobile tasks |
 | Mobile tests | `npm -w apps/mobile test` | mobile logic/components |
-| Firmware logic tests | `pio test -e native -d firmware` | firmware logic tasks |
-| Firmware build | `pio run -e esp32dev -d firmware` | firmware tasks (if PlatformIO is missing, mark 🧑 HUMAN and log) |
+| Firmware logic tests | `py -3.14 firmware/test/run_native.py` (host C++ via `pip install ziglang`; ADR-014) | firmware logic tasks |
+| Firmware build | `py -3.14 -m platformio run -e esp32dev -d firmware` (PlatformIO installed via pip) | firmware tasks |
 
 UI screens get visual checks by a human on a device. The loop checks that the app compiles, has correct types, passes component tests, and uses tokens. It never claims visual approval.
 
@@ -454,31 +454,31 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [~] BLOCKED (needs Expo account + phone) P6.15 🧑 HUMAN: create an Expo account, run `eas build --profile development --platform android`, install it on the phone, and point it at the local backend through a tunnel or the deployed backend.
 
 ### Phase 7 — Firmware (ESP32, PlatformIO)
-- [ ] P7.1 PlatformIO project: `esp32dev` and `native` envs, pinned library versions, `secrets.ini.example`, `config.h` with pins (GPIO4 DHT, GPIO34 soil, GPIO27 rain, GPIO26 relay active-LOW) and **no network secrets**.
-- [ ] P7.2 Sensors module:
+- [x] P7.1 PlatformIO project: `esp32dev` and `native` envs, pinned library versions, `secrets.ini.example`, `config.h` with pins (GPIO4 DHT, GPIO34 soil, GPIO27 rain, GPIO26 relay active-LOW) and **no network secrets**.
+- [x] P7.2 Sensors module:
   - Soil: 16-sample median-averaged ADC and a calibration struct `{dryRaw, wetRaw}` stored in NVS, with the **inverted-direction handling** (capacitive: higher raw = drier) auto-detected from calibration.
   - DHT: read at most every 2 s and reuse the last value between reads.
   - Rain: debounced.
   - Every sensor reports a validity flag, which drives the SENSOR_FAULT event.
-- [ ] P7.3 Automation module: a C++ port of the shared rules, passing `automation.json` vectors under `pio test -e native`.
-- [ ] P7.4 Pump actuator:
+- [x] P7.3 Automation module: a C++ port of the shared rules, passing `automation.json` vectors under `pio test -e native`.
+- [x] P7.4 Pump actuator:
   - Relay off at boot before anything else.
   - Hard max-runtime watchdog, cooldown, and manual-command expiry.
   - Fail-safe OFF on sensor fault.
   - Fail-safe OFF if the cloud is lost while in manual mode (auto mode keeps working locally).
-- [ ] P7.5 WiFi manager:
+- [x] P7.5 WiFi manager:
   - Up to 5 saved networks in NVS.
   - Scans and connects to the strongest known one.
   - Exponential backoff.
   - Reports SSID/RSSI.
   - Never blocks the loop.
-- [ ] P7.6 MQTT client: TLS (root CA embedded via build flag), LWT on `status`, subscribe desired/cmd, publish telemetry/reported/event/ack, and an outbound buffer for the last N telemetry points while offline.
-- [ ] P7.7 Shadow state: apply desired with a version check, persist settings to NVS (so settings survive reboot and offline periods), publish reported on change.
-- [ ] P7.8 BLE provisioning service (§7.4) with NimBLE: pairing-mode rules, WiFi scan, creds, cloud creds, state notifications. The claim code is generated at first boot.
-- [ ] P7.9 Status LED patterns: pairing, connecting, online, error. BOOT-button long-press enters pairing mode, and a very long press does a factory reset.
+- [x] P7.6 MQTT client: TLS (root CA embedded via build flag), LWT on `status`, subscribe desired/cmd, publish telemetry/reported/event/ack, and an outbound buffer for the last N telemetry points while offline.
+- [x] P7.7 Shadow state: apply desired with a version check, persist settings to NVS (so settings survive reboot and offline periods), publish reported on change.
+- [x] P7.8 BLE provisioning service (§7.4) with NimBLE: pairing-mode rules, WiFi scan, creds, cloud creds, state notifications. The claim code is generated at first boot.
+- [x] P7.9 Status LED patterns: pairing, connecting, online, error. BOOT-button long-press enters pairing mode, and a very long press does a factory reset.
 - [ ] P7.10 Optional stretch: OTA firmware update via an MQTT command pointing at an HTTPS URL.
-- [ ] P7.11 🧑 HUMAN: flash the board, run the in-app soil calibration (dry in air, then wet in water), and verify the relay polarity and the whole onboarding flow on real hardware.
-- [ ] P7.12 `docs/HARDWARE.md`: final wiring table, power (solar + buck + relay isolation from v1), calibration steps. pH removed.
+- [~] BLOCKED (needs the physical board) P7.11 🧑 HUMAN: flash the board, run the in-app soil calibration (dry in air, then wet in water), and verify the relay polarity and the whole onboarding flow on real hardware.
+- [x] P7.12 `docs/HARDWARE.md`: final wiring table, power (solar + buck + relay isolation from v1), calibration steps. pH removed.
 
 ### Phase 8 — Plant health / ML readiness
 - [ ] P8.1 Backend `insights` module: the `PlantHealthProvider` interface `{name, version, evaluate(input): Promise<HealthReport>}`, a provider registry chosen by env/flag, and the `RuleBasedHealthProvider` (moisture stability, watering frequency anomalies, heat stress from temperature/humidity trends). Scheduled daily evaluation plus an on-demand endpoint.
@@ -526,6 +526,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - ADR-011: Claim = register-or-transfer. The claim code is generated once at first boot and is only readable over BLE in pairing mode (physical access). The same owner can always re-claim. Another user needs a matching claim code. Every claim rotates the device's MQTT password. Other users' devices return 404, never 403.
 - ADR-012: Mobile uses Expo SDK 57 conventions: routes in `src/app`, a JS tab navigator with a custom tab bar (from `expo-router/tabs`), AsyncStorage for prefs instead of MMKV so it works in Expo Go, custom SVG charts instead of victory-native/Skia (fewer native deps; the same look on every platform). The mobile workspace pins ESLint 9 because eslint-config-expo doesn't support ESLint 10 yet.
 - ADR-013: BLE provisioning protocol v1 lives in `@xeno/shared/ble`. UTF-8 JSON payloads; writes are split into `i/n:chunk` frames of ≤160 bytes (fits the 185-byte iOS MTU, never splits multi-byte characters). Scan results and state arrive as small single-frame notifications. The app writes cloud credentials (from the claim) before WiFi credentials, so the device can go straight to `online`.
+- ADR-014: Firmware logic lives in `firmware/lib/xg_core` (no Arduino headers) and is tested on the host with a small runner compiled by zig c++ (`pip install ziglang`), because PlatformIO's `native` platform needs a system gcc that Windows lacks. It runs the same `automation.json` vectors as the TypeScript engine. Safety-critical control runs in its own FreeRTOS task on core 1, so network I/O can never delay a pump cut-off.
 - ADR-010: Manual commands work in any mode. In auto mode they are a temporary override (ON = water now, OFF = skip watering), then automation resumes. Max-runtime safety applies to every source. Rule order is in docs/ARCHITECTURE.md.
 
 ---

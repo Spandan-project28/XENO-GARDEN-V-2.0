@@ -25,3 +25,5 @@ infra/mosquitto/passwd
 .data/
 apps/mobile/.env.local
 .expo-export-check/
+firmware/include/generated_config.h
+firmware/certs/*.pem

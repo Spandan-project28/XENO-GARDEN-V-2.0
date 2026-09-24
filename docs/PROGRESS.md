@@ -164,3 +164,20 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 - *Changed:* `features/insights/PlantHealthScreen.tsx` (route `/device/[id]/health`). With no plant linked, a "What are you growing?" form creates the plant and links it (`plantId`). Otherwise it shows the latest `HealthReport`: score gauge coloured by status, summary, "checked X ago · Smart rules/AI model", findings with severity and confidence, "Run a new check", previous checks, and a photo-check card behind `flags.photoUpload`. It renders any provider's report, so ML plugs in without UI changes. The backend endpoints come in P8.1.
 - *Verified:* 20 suites / 106 tests; typecheck and lint clean.
 - *P6.15 BLOCKED (🧑 HUMAN):* needs an Expo account, `eas init` (sets the projectId used for push), `eas build --profile development --platform android`, and installing on a phone.
+
+## 2026-09-24 — P7.1–P7.9, P7.12 Firmware
+- *Tooling:* installed PlatformIO 6.2 and ziglang via pip (Python 3.14 was present), so firmware is now built and tested locally instead of being blocked on the human.
+- *Changed:* `firmware/` (ESP32, Arduino, espressif32@6.9.0, pinned libs):
+  - `lib/xg_core` (pure C++, host-testable): the automation port, calibration (`rawToMoisture` handles either sensor direction and treats rail values as faults), median filter, BLE frame assembler, and a desired-shadow parser that **clamps** every setting to the shared limits, plus manual-command clock conversion (NTP-synced epoch → monotonic; capped to the command duration against clock skew).
+  - `src/`:
+    - `pump.h` sets the relay latch OFF before the pin is enabled.
+    - `control.cpp` is a FreeRTOS task on core 1 at high priority, running sensors → automation → relay every 1 s, with the cloud-loss manual cancel after 5 min.
+    - `sensors.cpp`: 16-sample median ADC on ADC1, DHT cached at ≥2 s, rain debounced ×3.
+    - `wifi_link.cpp`: 5 saved networks, strongest visible first, hidden SSIDs, exponential backoff, and classified provisioning failures (wrong password, not found, timeout).
+    - `mqtt_link.cpp`: TLS with an optional embedded CA, LWT, retained status/reported, versioned desired apply with NVS persistence, all 6 commands with acks, a 50-reading offline buffer, and events that wait until they can be delivered.
+    - `provisioning.cpp`: NimBLE GATT with all 5 characteristics, callbacks queue work to the loop, framed writes, scan results as notifications, a live state machine connecting_wifi → connecting_cloud → online/failed, and no_internet detected by DNS failure. Pairing opens at first boot (until configured), on a 5 s button hold, or by cloud command (2 min).
+    - `storage.cpp` (NVS): networks, cloud, settings, calibration, and a claim code generated once that survives factory reset. Plus `status_led`, button handling (5 s pairing / 15 s factory reset) and a `timebase` using 64-bit monotonic ms (no millis() wrap).
+  - `scripts/embed_config.py` generates the CA and fallback-broker header; nothing secret is committed.
+  - `docs/HARDWARE.md`: parts, wiring table with reasons, the isolated pump circuit, solar power, first start, calibration, LED legend, safety behaviour, TLS.
+- *Verified:* `py -3.14 firmware/test/run_native.py` gives **218 checks passed** (all 33 shared automation vectors, calibration, framing incl. UTF-8, desired parsing incl. hostile clamping, clock conversion). `platformio run -e esp32dev` gives **SUCCESS** from a clean build with zero warnings in our sources (RAM 17.9 %, flash 61.9 %, 1.2 MB image).
+- *Blocked:* P7.11 (physical flashing, calibration, relay polarity check) needs the board. *Open:* P7.10 OTA (optional). Safe OTA needs signed images; to be revisited in Phase 9.

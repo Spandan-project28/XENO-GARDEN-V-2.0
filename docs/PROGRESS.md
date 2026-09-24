@@ -77,3 +77,7 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - A deterministic garden physics model (seeded RNG, daily temperature curve) and 6 scenarios.
   - `provision.ts` signs in or registers and claims over the public REST API, just like the app does.
 - *Verified:* 10 simulator unit tests (fake transport + fake clock); typecheck, lint and build clean.
+
+## 2026-09-24 — P5.2 End-to-end suite
+- *Changed:* `apps/backend/test/e2e/full-flow.test.ts` runs the real runtime (HTTP + embedded MQTT + Socket.IO + in-memory Mongo) and a simulated device onboarded through the public API. Steps: sign up, claim, device applies desired v1, live telemetry over the socket, manual mode confirmed by reported state, pump ON 10 s acknowledged then expired on the device (pump session about 10 s, desired.manual cleaned up), a dry garden gives exactly 1 LOW_MOISTURE alert, history returns readings plus pump time, power cut → LWT offline → DEVICE_OFFLINE alert, and pump commands are refused while offline. Added `SimDevice.powerCut()`.
+- *Verified:* `npm -w @xeno/backend run test:e2e` → 7/7, green on 3 consecutive runs.

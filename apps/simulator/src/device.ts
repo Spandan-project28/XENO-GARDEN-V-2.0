@@ -117,6 +117,11 @@ export class SimDevice {
     await this.t.end();
   }
 
+  /** Pulls the plug: no DISCONNECT is sent, so the broker publishes the LWT. */
+  powerCut(reconnectAfterSec: number | null = null) {
+    this.t.drop(reconnectAfterSec === null ? null : reconnectAfterSec * 1000);
+  }
+
   private topic(kind: TopicKind) {
     return topicFor(this.hardwareId, kind);
   }

@@ -146,3 +146,8 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 ## 2026-09-24 — P6.11 App settings
 - *Changed:* `features/settings/SettingsScreen.tsx`: profile card with initials avatar and a name-edit sheet (`PATCH /me` updates the session user), theme Auto/Light/Dark and °C/°F (persisted prefs, applied live), notification master and per-alert-type toggles (optimistic, rollback on error), About (app version, server URL, data retention), sign out with confirmation (revokes the refresh-token family server-side and wipes local data). The auth feature got a public `index.ts`.
 - *Verified:* 15 suites / 86 tests; typecheck and lint clean.
+
+## 2026-09-24 — P6.12 Push notifications (app side)
+- *Changed:* `lib/push.ts`: foreground banner handler, Android "alerts" channel, a permission status model (unsupported/undetermined/denied/granted), Expo token → `POST /me/push-tokens` (idempotent, token remembered), unregister on sign-out while still authenticated, and tap navigation to the push `data.url` (`/alerts?focus=<id>`) plus alert refetch when a notification arrives. `components/PushPrompt.tsx` on Home explains why before asking, and links to phone settings if denied. Registration is skipped gracefully without an EAS project ID, on web, or on simulators.
+- *Verified:* 16 suites / 89 tests (asks only when allowed, registers the token with projectId, respects denied, unregisters on sign-out). Typecheck and lint clean.
+- *Human dependency:* real pushes need `eas init` (projectId) and a dev build (P6.15).

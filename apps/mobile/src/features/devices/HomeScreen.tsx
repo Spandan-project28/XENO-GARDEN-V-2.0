@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ConnectionBanner } from '@/components/ConnectionBanner';
+import { PushPrompt } from '@/components/PushPrompt';
 import { useTheme } from '@/design';
 import { errorMessage } from '@/lib/api';
 import { greeting } from '@/lib/format';
@@ -64,6 +65,7 @@ export function HomeScreen() {
         ) : (
           <>
             <Overview devices={list} />
+            <PushPrompt />
             {list.map((d, i) => (
               <Animated.View key={d.id} entering={FadeInDown.delay(i * 60).springify().damping(18)}>
                 <DeviceCard device={d} now={now} onPress={() => router.push(`/device/${d.id}`)} />

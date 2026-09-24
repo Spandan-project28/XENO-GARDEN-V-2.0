@@ -16,6 +16,7 @@ import { env } from '@/config/env';
 import { ThemeProvider, useTheme } from '@/design';
 import { wireSignOutCleanup } from '@/lib/lifecycle';
 import { usePrefs } from '@/lib/prefs';
+import { configureNotificationHandler } from '@/lib/push';
 import { queryClient, queryPersister, wireQueryEnvironment } from '@/lib/queryClient';
 import { sessionStore, useSession } from '@/lib/session';
 import { ToastHost } from '@/ui';
@@ -23,6 +24,7 @@ import { ToastHost } from '@/ui';
 void SplashScreen.preventAutoHideAsync();
 wireQueryEnvironment();
 wireSignOutCleanup();
+configureNotificationHandler();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({

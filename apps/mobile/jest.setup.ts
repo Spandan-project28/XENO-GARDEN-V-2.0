@@ -39,3 +39,16 @@ jest.mock('expo-router', () => {
 jest.mock('@react-native-community/netinfo', () =>
   require('@react-native-community/netinfo/jest/netinfo-mock.js'),
 );
+
+jest.mock('expo-device', () => ({ isDevice: true }));
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(async () => null),
+  getPermissionsAsync: jest.fn(async () => ({ status: 'undetermined' })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  getExpoPushTokenAsync: jest.fn(async () => ({ data: 'ExponentPushToken[test]' })),
+  useLastNotificationResponse: jest.fn(() => null),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
+  AndroidImportance: { HIGH: 4, MAX: 5 },
+}));

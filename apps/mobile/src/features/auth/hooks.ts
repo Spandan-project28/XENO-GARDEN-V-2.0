@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import type { LoginBody, RegisterBody } from '@xeno/shared';
 import { api } from '@/lib/api';
+import { unregisterPushToken } from '@/lib/push';
 import { sessionStore } from '@/lib/session';
 
 export function useSignIn() {
@@ -19,6 +20,7 @@ export function useSignUp() {
 
 /** Revokes the session server-side (best effort) and wipes everything local. */
 export async function signOut() {
+  await unregisterPushToken(); // while still authenticated
   const refresh = await sessionStore.getRefreshToken();
   if (refresh) await api.auth.logout(refresh).catch(() => undefined);
   await sessionStore.clear();

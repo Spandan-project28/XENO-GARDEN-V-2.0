@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useTheme } from '@/design';
+import { usePushNavigation } from '@/lib/push';
 import { queryClient } from '@/lib/queryClient';
 import { realtime } from '@/lib/realtime';
 
@@ -8,6 +9,7 @@ export const unstable_settings = { initialRouteName: '(tabs)' };
 
 export default function AppLayout() {
   const t = useTheme();
+  usePushNavigation();
   useEffect(() => {
     void realtime.start(queryClient);
     return () => realtime.stop();

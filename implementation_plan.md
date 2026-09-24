@@ -450,8 +450,8 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P6.11 App Settings: theme, units, notification preferences, account.
 - [x] P6.12 Push notification registration and handling (the permission flow plus a token POST).
 - [x] P6.13 Onboarding (BLE provisioning wizard, §9.8) against a **mock BLE transport interface**, so the flow can be tested without hardware; the real `react-native-ble-plx` transport sits behind the same interface.
-- [ ] P6.14 Plant Health screen: consumes `/plants/:id/health`, with the photo card behind a feature flag.
-- [ ] P6.15 🧑 HUMAN: create an Expo account, run `eas build --profile development --platform android`, install it on the phone, and point it at the local backend through a tunnel or the deployed backend.
+- [x] P6.14 Plant Health screen: consumes `/plants/:id/health`, with the photo card behind a feature flag.
+- [~] BLOCKED (needs Expo account + phone) P6.15 🧑 HUMAN: create an Expo account, run `eas build --profile development --platform android`, install it on the phone, and point it at the local backend through a tunnel or the deployed backend.
 
 ### Phase 7 — Firmware (ESP32, PlatformIO)
 - [ ] P7.1 PlatformIO project: `esp32dev` and `native` envs, pinned library versions, `secrets.ini.example`, `config.h` with pins (GPIO4 DHT, GPIO34 soil, GPIO27 rain, GPIO26 relay active-LOW) and **no network secrets**.

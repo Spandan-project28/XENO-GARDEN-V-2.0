@@ -4,6 +4,7 @@ import type { Deps, RuntimeStatus } from './deps.js';
 import { AppBus } from './lib/bus.js';
 import { createAccessTokens } from './lib/crypto.js';
 import { createLogger, type AppLogger } from './lib/logger.js';
+import { createAppMetrics } from './lib/metrics.js';
 import { createAlertEngine } from './modules/alerts/engine.js';
 import { createAlertService } from './modules/alerts/service.js';
 import { createAuthService } from './modules/auth/service.js';
@@ -34,9 +35,13 @@ export interface ContainerOptions {
 export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
   const now = opts.now ?? (() => new Date());
   const log = opts.log ?? createLogger(env);
-  const bus = new AppBus(
-    opts.onBusError ?? ((err, event) => log.error({ err, event }, 'bus listener failed')),
-  );
+  const metrics = createAppMetrics();
+  const bus = new AppBus((err, event) => {
+    metrics.busErrors.inc({ event });
+    if (opts.onBusError) opts.onBusError(err, event);
+    else log.error({ err, event }, 'bus listener failed');
+  });
+  bus.on('alert.opened', (e) => metrics.alertsRaised.inc({ type: e.alert.type }));
   const tokens = createAccessTokens(env.JWT_ACCESS_SECRET, env.ACCESS_TOKEN_TTL_SEC);
   const publisher = new PublisherProxy();
 
@@ -76,9 +81,15 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     devicesConnected: () => 0,
   };
 
+  metrics.registry.gauge('xg_mqtt_connected', 'Backend MQTT client connected (1/0)', () => (runtime.mqttConnected() ? 1 : 0));
+  metrics.registry.gauge('xg_devices_connected', 'Devices connected to the embedded broker', () => runtime.devicesConnected());
+  metrics.registry.gauge('xg_process_uptime_seconds', 'Process uptime', () => Math.round(process.uptime()));
+  metrics.registry.gauge('xg_process_heap_bytes', 'V8 heap used', () => process.memoryUsage().heapUsed);
+
   return {
     env,
     log,
+    metrics,
     bus,
     now,
     tokens,

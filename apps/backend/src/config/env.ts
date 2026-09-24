@@ -52,6 +52,9 @@ export const envSchema = z
     EXPO_ACCESS_TOKEN: z.string().optional(),
     PUSH_ENABLED: bool.default(true),
 
+    /** Bearer token for GET /v1/metrics. Without it, metrics are only served outside production. */
+    METRICS_TOKEN: z.string().min(16).optional(),
+
     /** Optional plant-health model service (services/ml). Rules are used when unset or failing. */
     ML_SERVICE_URL: z.string().url().optional(),
     ML_API_KEY: z.string().optional(),

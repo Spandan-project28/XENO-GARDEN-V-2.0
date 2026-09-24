@@ -105,6 +105,7 @@ describe('realtime end-to-end through the runtime', () => {
     expect(events.find((e) => e.event === 'telemetry')?.data).toMatchObject({ deviceId, soilMoisture: 22 });
     expect(events.find((e) => e.event === 'status')?.data).toMatchObject({ deviceId, online: true });
     expect(rt.deps.status.devicesConnected()).toBe(1);
+    expect(rt.deps.metrics.mqttMessages.get({ kind: 'telemetry' })).toBeGreaterThanOrEqual(1);
   });
 
   it('pushes desired changes and reported state; records pump sessions', async () => {

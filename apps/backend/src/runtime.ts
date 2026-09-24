@@ -53,7 +53,15 @@ export async function startRuntime(env: Env, opts: ContainerOptions & { skipDb?:
     log.info({ port: broker.port }, 'embedded MQTT broker listening');
   }
 
-  const gateway = new DeviceGateway({ url, username, password, log, now: deps.now });
+  const gateway = new DeviceGateway({
+    url,
+    username,
+    password,
+    log,
+    now: deps.now,
+    onMessage: (kind, accepted) =>
+      accepted ? deps.metrics.mqttMessages.inc({ kind }) : deps.metrics.mqttDropped.inc({ kind }),
+  });
   gateway.setHandlers({
     telemetry: (hw, p, at) => services.ingest.telemetry(hw, p, at),
     reported: async (hw, p, at) => {

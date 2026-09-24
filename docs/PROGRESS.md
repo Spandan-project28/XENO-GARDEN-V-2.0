@@ -214,3 +214,7 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Firmware BLE: LE Secure Connections with bonding; `info`/`wifi_creds`/`cloud_creds` require an encrypted link; bonds are cleared on factory reset. The app retries the first encrypted read while the OS completes pairing.
   - `docs/SECURITY.md`: asset list, controls per layer, accepted risks with reasons, a production checklist.
 - *Verified:* backend 126 tests; mqtt int 7/7 incl. the oversized drop; firmware build SUCCESS (no warnings in our sources); mobile typecheck and lint clean, 108 tests; Android export OK after the dependency changes; `query-string` parse verified.
+
+## 2026-09-24 — P9.2 Observability
+- *Changed:* `lib/metrics.ts`, a dependency-free Prometheus registry. Counters: HTTP requests by method/status class, MQTT messages by kind (accepted/dropped via a new gateway `onMessage` hook), bus listener errors, alerts raised by type. Gauges: MQTT connected, devices connected, uptime, heap. `GET /v1/metrics` is guarded by `METRICS_TOKEN` (or served only outside production). Existing: request IDs (`x-request-id`, honours incoming), structured pino logs with redaction, `/v1/health` deep check (db + mqtt, 503 when degraded).
+- *Verified:* 3 metrics tests plus the realtime int test asserting MQTT telemetry is counted; backend 18 files / 129 tests; lint clean.

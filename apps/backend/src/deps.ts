@@ -2,6 +2,7 @@ import type { Env } from './config/env.js';
 import type { AppBus } from './lib/bus.js';
 import type { AccessTokens } from './lib/crypto.js';
 import type { AppLogger } from './lib/logger.js';
+import type { AppMetrics } from './lib/metrics.js';
 import type { AlertEngine } from './modules/alerts/engine.js';
 import type { AlertService } from './modules/alerts/service.js';
 import type { AuthService } from './modules/auth/service.js';
@@ -43,6 +44,7 @@ export interface RuntimeStatus {
 export interface Deps {
   env: Env;
   log: AppLogger;
+  metrics: AppMetrics;
   bus: AppBus;
   now: () => Date;
   tokens: AccessTokens;

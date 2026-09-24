@@ -494,7 +494,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - Input size limits.
   - Dependency audit.
   - BLE provisioning security (proof-of-possession using the claim code).
-- [ ] P9.2 Observability: request IDs, structured logs, a `/v1/health` deep check, and basic metrics (messages/s, connected devices).
+- [x] P9.2 Observability: request IDs, structured logs, a `/v1/health` deep check, and basic metrics (messages/s, connected devices).
 - [ ] P9.3 CI: GitHub Actions running typecheck, lint, tests, e2e (with aedes and mongodb-memory-server), the firmware native tests and the firmware build.
 - [ ] P9.4 🧑 HUMAN: create MongoDB Atlas (free M0) and a managed MQTT broker (EMQX Serverless or HiveMQ Cloud), and choose an **always-on** backend host (Railway / Fly.io / small VPS). Render's free tier sleeps and would drop the MQTT subscription, so it's not suitable. Put the secrets into the host's env.
 - [ ] P9.5 Deployment config: backend Dockerfile (multi-stage), a host config file (`fly.toml` or `railway.json`), and a production `EXPO_PUBLIC_API_URL` + firmware `BROKER_HOST` wired from config.

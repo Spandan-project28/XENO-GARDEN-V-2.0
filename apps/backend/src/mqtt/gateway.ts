@@ -42,6 +42,8 @@ export interface DeviceGatewayOptions {
   clientId?: string;
   log: GatewayLogger;
   now?: () => Date;
+  /** Observability hook: every inbound message, accepted or dropped. */
+  onMessage?: (kind: string, accepted: boolean) => void;
 }
 
 const SUBSCRIPTIONS = ['telemetry', 'reported', 'status', 'event', 'cmdAck'] as const;
@@ -138,6 +140,7 @@ export class DeviceGateway {
     const { hardwareId, kind } = parsed;
     if (raw.length > MAX_DEVICE_MESSAGE_BYTES) {
       this.opts.log.warn({ hardwareId, kind, bytes: raw.length }, 'oversized mqtt message dropped');
+      this.opts.onMessage?.(kind, false);
       return;
     }
     const at = this.now();
@@ -157,8 +160,11 @@ export class DeviceGateway {
     const text = raw.toString('utf8');
     if (!text) return; // cleared retained message
 
-    const invalid = (issues: unknown) =>
+    const invalid = (issues: unknown) => {
+      this.opts.onMessage?.(kind, false);
       this.opts.log.warn({ hardwareId, kind, issues }, 'mqtt payload rejected');
+    };
+    this.opts.onMessage?.(kind, true);
 
     if (kind === 'status') {
       const r = statusPayload.safeParse(text.trim().replace(/^"|"$/g, ''));

@@ -11,6 +11,15 @@ const healthResponse = z.object({
 });
 
 export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
+  app.get('/metrics', { schema: { hide: true }, config: { rateLimit: false } }, async (req, reply) => {
+    const { env, metrics } = app.deps;
+    const allowed = env.METRICS_TOKEN
+      ? req.headers.authorization === `Bearer ${env.METRICS_TOKEN}`
+      : env.NODE_ENV !== 'production';
+    if (!allowed) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Not found' } });
+    return reply.header('content-type', 'text/plain; version=0.0.4').send(metrics.registry.render());
+  });
+
   app.get(
     '/health',
     {

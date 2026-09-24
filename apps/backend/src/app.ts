@@ -85,6 +85,9 @@ export async function buildApp(deps: Deps): Promise<App> {
   app.addHook('onSend', async (req, reply) => {
     reply.header('x-request-id', req.id);
   });
+  app.addHook('onResponse', async (req, reply) => {
+    deps.metrics.httpRequests.inc({ method: req.method, status: `${Math.floor(reply.statusCode / 100)}xx` });
+  });
 
   await app.register(healthRoutes, { prefix: '/v1' });
   await app.register(registerModules, { prefix: '/v1' });

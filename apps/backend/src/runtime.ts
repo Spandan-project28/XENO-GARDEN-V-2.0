@@ -14,6 +14,7 @@ import { attachRealtime, type Realtime } from './realtime/socket.js';
 
 const SWEEP_EVERY_MS = 30_000;
 const ROLLUP_EVERY_MS = 5 * 60_000;
+const HEALTH_EVERY_MS = 6 * 3_600_000;
 
 export interface Runtime {
   app: App;
@@ -106,6 +107,7 @@ export async function startRuntime(env: Env, opts: ContainerOptions & { skipDb?:
     setInterval(guard('sweep', sweep), SWEEP_EVERY_MS),
     setInterval(guard('rollup', rollup), ROLLUP_EVERY_MS),
     setInterval(guard('alerts', () => services.alertEngine.tick(deps.now())), SWEEP_EVERY_MS),
+    setInterval(guard('plant-health', () => services.insights.runDue()), HEALTH_EVERY_MS),
   ];
   timers.forEach((t) => t.unref());
 

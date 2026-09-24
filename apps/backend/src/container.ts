@@ -12,6 +12,10 @@ import { createControlService } from './modules/control/service.js';
 import { createDeviceService } from './modules/devices/service.js';
 import { ExpoPushSender, NoopPushSender, type PushSender } from './modules/notifications/sender.js';
 import { createNotificationService } from './modules/notifications/service.js';
+import { ProviderRegistry } from './modules/insights/provider.js';
+import { RuleBasedHealthProvider } from './modules/insights/rules.js';
+import { createInsightsService } from './modules/insights/service.js';
+import { createPlantService } from './modules/plants/service.js';
 import { createTelemetryIngest } from './modules/telemetry/ingest.js';
 import { createPumpEventService } from './modules/telemetry/pumpEvents.js';
 import { createReadingQueries } from './modules/telemetry/queries.js';
@@ -49,6 +53,9 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     opts.pushSender ??
     (env.PUSH_ENABLED && env.NODE_ENV !== 'test' ? new ExpoPushSender(env.EXPO_ACCESS_TOKEN) : new NoopPushSender());
   const notifications = createNotificationService({ bus, sender, now, log });
+  const plants = createPlantService();
+  const registry = new ProviderRegistry([new RuleBasedHealthProvider()]);
+  const insights = createInsightsService({ registry, readings, pumpEvents, alerts, now, log });
 
   const runtime: RuntimeStatus = {
     mqttConnected: () => false,
@@ -62,7 +69,7 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     now,
     tokens,
     publisher,
-    services: { auth, devices, control, ingest, readings, pumpEvents, alerts, alertEngine, notifications },
+    services: { auth, devices, control, ingest, readings, pumpEvents, alerts, alertEngine, notifications, plants, insights },
     runtime,
     status: {
       db: isDbConnected,

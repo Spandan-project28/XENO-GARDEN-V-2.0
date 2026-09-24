@@ -66,12 +66,18 @@ export function createReadingQueries() {
     }));
   }
 
-  async function fiveMinute(deviceId: Types.ObjectId, from: Date, to: Date): Promise<ReadingPoint[]> {
+  async function bucketed(
+    deviceId: Types.ObjectId,
+    from: Date,
+    to: Date,
+    unit: 'minute' | 'hour',
+    binSize: number,
+  ): Promise<ReadingPoint[]> {
     const pipeline: PipelineStage[] = [
       { $match: { deviceId, ts: { $gte: from, $lte: to } } },
       {
         $group: {
-          _id: { $dateTrunc: { date: '$ts', unit: 'minute', binSize: 5 } },
+          _id: { $dateTrunc: { date: '$ts', unit, binSize } },
           soil: { $avg: '$soilMoisture' },
           soilMin: { $min: '$soilMoisture' },
           soilMax: { $max: '$soilMoisture' },
@@ -151,6 +157,10 @@ export function createReadingQueries() {
   };
 
   return {
+    /** Hourly buckets straight from raw readings (≤ 30 days) — used by plant-health checks. */
+    hourlyFromRaw: (deviceId: string, from: Date, to: Date) =>
+      bucketed(new Types.ObjectId(deviceId), from, to, 'hour', 1),
+
     async query(
       deviceId: string,
       q: { from: string; to: string; resolution: ReadingResolution; tz?: string },
@@ -164,7 +174,7 @@ export function createReadingQueries() {
         resolution === 'raw'
           ? await raw(id, from, to)
           : resolution === '5m'
-            ? await fiveMinute(id, from, to)
+            ? await bucketed(id, from, to, 'minute', 5)
             : await fromHourly(id, from, to, resolution === '1h' ? 'hour' : 'day', q.tz ?? 'UTC');
       return {
         resolution,

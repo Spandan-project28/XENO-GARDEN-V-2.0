@@ -181,3 +181,11 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - `docs/HARDWARE.md`: parts, wiring table with reasons, the isolated pump circuit, solar power, first start, calibration, LED legend, safety behaviour, TLS.
 - *Verified:* `py -3.14 firmware/test/run_native.py` gives **218 checks passed** (all 33 shared automation vectors, calibration, framing incl. UTF-8, desired parsing incl. hostile clamping, clock conversion). `platformio run -e esp32dev` gives **SUCCESS** from a clean build with zero warnings in our sources (RAM 17.9 %, flash 61.9 %, 1.2 MB image).
 - *Blocked:* P7.11 (physical flashing, calibration, relay polarity check) needs the board. *Open:* P7.10 OTA (optional). Safe OTA needs signed images; to be revisited in Phase 9.
+
+## 2026-09-24 — P8.1 Plant health backend
+- *Changed:*
+  - `modules/insights/provider.ts`: the `PlantHealthProvider` port (`name`, `version`, `evaluate(HealthInput)`) and a `ProviderRegistry` chain with fallback. The ML provider goes first and rules act as the safety net.
+  - `insights/rules.ts`: `RuleBasedHealthProvider` v1 over hourly data. Findings (stable codes): dry_spells, waterlogging, pump_safety_stops, frequent_watering, heat_stress, moisture_unstable, sensor_gaps, moisture_on_target. The score starts at 100 with severity penalties; status healthy/attention/critical/unknown; human summaries.
+  - `insights/service.ts` builds the input: the linked device, 7 days of hourly buckets straight from raw readings (new `hourlyFromRaw`) and pump sessions. It stores the `HealthReport`, raises a PLANT_HEALTH alert when critical, and returns history. A `runDue()` daily job (runtime checks every 6 h).
+  - `modules/plants`: CRUD with ownership; delete unlinks devices and removes reports. Routes: `/plants`, `/plants/:id/health`, `/plants/:id/health/run`.
+- *Verified:* 6 rule/registry unit tests and 4 plants int tests (CRUD/isolation, healthy report + history, critical → alert, daily job idempotent). Full backend suite green; lint clean.

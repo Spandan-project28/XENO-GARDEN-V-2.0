@@ -11,7 +11,8 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./test-vectors/automation.json": "./test-vectors/automation.json"
+    "./test-vectors/automation.json": "./test-vectors/automation.json",
+    "./test-vectors/ml-contract.json": "./test-vectors/ml-contract.json"
   },
   "files": [
     "dist",

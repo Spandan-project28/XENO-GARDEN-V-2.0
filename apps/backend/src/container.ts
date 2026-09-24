@@ -12,7 +12,8 @@ import { createControlService } from './modules/control/service.js';
 import { createDeviceService } from './modules/devices/service.js';
 import { ExpoPushSender, NoopPushSender, type PushSender } from './modules/notifications/sender.js';
 import { createNotificationService } from './modules/notifications/service.js';
-import { ProviderRegistry } from './modules/insights/provider.js';
+import { MlHealthProvider } from './modules/insights/ml.js';
+import { ProviderRegistry, type PlantHealthProvider } from './modules/insights/provider.js';
 import { RuleBasedHealthProvider } from './modules/insights/rules.js';
 import { createInsightsService } from './modules/insights/service.js';
 import { createPlantService } from './modules/plants/service.js';
@@ -54,7 +55,13 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     (env.PUSH_ENABLED && env.NODE_ENV !== 'test' ? new ExpoPushSender(env.EXPO_ACCESS_TOKEN) : new NoopPushSender());
   const notifications = createNotificationService({ bus, sender, now, log });
   const plants = createPlantService();
-  const registry = new ProviderRegistry([new RuleBasedHealthProvider()]);
+  const providers: PlantHealthProvider[] = [new RuleBasedHealthProvider()];
+  if (env.ML_SERVICE_URL) {
+    providers.unshift(
+      new MlHealthProvider({ url: env.ML_SERVICE_URL, apiKey: env.ML_API_KEY, modelName: env.ML_MODEL_NAME }),
+    );
+  }
+  const registry = new ProviderRegistry(providers);
   const insights = createInsightsService({ registry, readings, pumpEvents, alerts, now, log });
 
   const runtime: RuntimeStatus = {

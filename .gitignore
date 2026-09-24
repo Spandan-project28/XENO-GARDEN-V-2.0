@@ -27,3 +27,5 @@ apps/mobile/.env.local
 .expo-export-check/
 firmware/include/generated_config.h
 firmware/certs/*.pem
+__pycache__/
+.pytest_cache/

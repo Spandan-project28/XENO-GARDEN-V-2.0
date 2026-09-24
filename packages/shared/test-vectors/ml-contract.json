@@ -1,0 +1,30 @@
+{
+  "description": "Contract between the backend MlHealthProvider (apps/backend/src/modules/insights/ml.ts) and services/ml. Both sides test against this file.",
+  "request": {
+    "plant": { "id": "665f1c2e9d1a4b0012345678", "name": "Balcony tomatoes", "species": "Tomato" },
+    "device": {
+      "id": "665f1c2e9d1a4b0087654321",
+      "settings": { "moistureLow": 30, "moistureHigh": 45, "maxPumpRunSec": 600, "cooldownSec": 300, "rainLockout": true, "highTempC": 38, "telemetryIntervalSec": 5 }
+    },
+    "window": { "from": "2026-05-01T00:00:00.000Z", "to": "2026-05-08T00:00:00.000Z" },
+    "readings": [
+      { "ts": "2026-05-01T00:00:00.000Z", "soilMoisture": 41.2, "temperature": 23.5, "humidity": 61.0, "rain": 0, "pump": 0 },
+      { "ts": "2026-05-01T01:00:00.000Z", "soilMoisture": 39.8, "temperature": 22.9, "humidity": 63.4, "rain": 0, "pump": 0 },
+      { "ts": "2026-05-01T02:00:00.000Z", "soilMoisture": 28.4, "temperature": 22.1, "humidity": 64.0, "rain": 0, "pump": 0.25 },
+      { "ts": "2026-05-01T03:00:00.000Z", "soilMoisture": null, "temperature": 21.8, "humidity": 65.2, "rain": 0, "pump": 0 }
+    ],
+    "pumpEvents": [
+      { "source": "auto", "reason": "dry", "stopReason": "wet", "startedAt": "2026-05-01T02:10:00.000Z", "durationSec": 540 }
+    ],
+    "imageUrl": null
+  },
+  "response": {
+    "model": { "name": "baseline", "version": "0.1.0" },
+    "score": 82,
+    "status": "healthy",
+    "summary": "Balcony tomatoes looks healthy.",
+    "findings": [
+      { "code": "moisture_on_target", "severity": "info", "message": "Moisture mostly in range.", "confidence": 0.7 }
+    ]
+  }
+}

@@ -52,6 +52,11 @@ export const envSchema = z
     EXPO_ACCESS_TOKEN: z.string().optional(),
     PUSH_ENABLED: bool.default(true),
 
+    /** Optional plant-health model service (services/ml). Rules are used when unset or failing. */
+    ML_SERVICE_URL: z.string().url().optional(),
+    ML_API_KEY: z.string().optional(),
+    ML_MODEL_NAME: z.string().default('baseline'),
+
     /** Directory for uploaded plant photos in the local-disk storage driver. */
     UPLOAD_DIR: z.string().default('./uploads'),
     PUBLIC_URL: z.string().optional(),

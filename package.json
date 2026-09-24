@@ -30,5 +30,9 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1"
   },
-  "packageManager": "npm@11.19.0"
+  "packageManager": "npm@11.19.0",
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  }
 }

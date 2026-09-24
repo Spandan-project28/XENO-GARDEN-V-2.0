@@ -129,3 +129,7 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - The devices feature got a public `index.ts`, so features only import each other's public API.
 - *Lesson:* my test output filter showed only "Tests:" and hid a suite that failed to load. From now on I check the "Test Suites:" line too.
 - *Verified:* 12 suites / 71 tests (range math, real window sent to the API, range and device switching, sessions list, empty state). Typecheck and lint clean.
+
+## 2026-09-24 — P6.9 Alerts
+- *Changed:* `features/alerts`: infinite cursor list (Active = open+acknowledged, All), sections by day (Today / Yesterday / date), `AlertRow` with severity colours, type icon, repeat count "×37", device, age and status, plus swipe-left actions (Seen / Resolve) via `ReanimatedSwipeable`. Tapping opens a bottom sheet with "What to do" advice per alert type, actions and a jump to the device. Push deep link `?focus=<id>` highlights the alert and opens its sheet once. Optimistic ack/resolve updates both lists and the tab badge count. Empty state "All clear", load older pages.
+- *Verified:* 13 suites / 77 tests (grouping, counts, sheet resolve removes from the active list, deep link, pagination). Typecheck and lint clean.

@@ -49,6 +49,7 @@ const SUBSCRIPTIONS = ['telemetry', 'reported', 'status', 'event', 'cmdAck'] as 
 export class DeviceGateway {
   private client: MqttClient | null = null;
   private handlers: InboundHandlers | null = null;
+  private connectListeners: (() => Promise<void>)[] = [];
   private readonly queues = new Map<string, Promise<void>>();
   private readonly now: () => Date;
 
@@ -58,6 +59,17 @@ export class DeviceGateway {
 
   setHandlers(handlers: InboundHandlers) {
     this.handlers = handlers;
+  }
+
+  /** Runs after the first connect and after every reconnect (e.g. to republish retained state). */
+  onConnect(listener: () => Promise<void>) {
+    this.connectListeners.push(listener);
+  }
+
+  private fireConnect() {
+    for (const l of this.connectListeners) {
+      l().catch((err) => this.opts.log.error({ err }, 'mqtt onConnect listener failed'));
+    }
   }
 
   isConnected(): boolean {
@@ -81,7 +93,12 @@ export class DeviceGateway {
       SUBSCRIPTIONS.map((k) => wildcardFor(k)),
       { qos: 1 },
     );
+    client.on('connect', () => {
+      this.opts.log.info({}, 'mqtt reconnected');
+      this.fireConnect();
+    });
     this.opts.log.info({ url: redact(this.opts.url) }, 'mqtt gateway connected');
+    this.fireConnect();
   }
 
   async publishDesired(hardwareId: string, desired: DesiredState): Promise<void> {

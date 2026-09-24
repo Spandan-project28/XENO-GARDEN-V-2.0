@@ -118,6 +118,13 @@ export function createDeviceService({ env, bus, now }: DeviceServiceDeps) {
         device = updated;
       }
 
+      bus.emit('device.claimed', {
+        deviceId: device._id.toHexString(),
+        ownerId: userId,
+        hardwareId: device.hardwareId,
+        desired: device.desired,
+      });
+
       return {
         device: toDevicePublic(device),
         mqtt: {

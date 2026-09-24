@@ -142,13 +142,14 @@ export function createControlService({ devices, publisher, bus, now, log }: Cont
     },
 
     /** Device → cloud reported state. */
-    async onReported(hardwareId: string, reported: ReportedPayload, at: Date) {
+    /** Returns the device id (for follow-up processing), or null for unknown devices. */
+    async onReported(hardwareId: string, reported: ReportedPayload, at: Date): Promise<string | null> {
       const d = await Device.findOneAndUpdate(
         { hardwareId },
         { $set: { reported: { ...reported, at }, firmwareVersion: reported.fwVersion, lastSeenAt: at } },
         { new: true },
       ).lean<DeviceDoc>();
-      if (!d) return;
+      if (!d) return null;
       bus.emit('device.reported', {
         deviceId: d._id.toHexString(),
         ownerId: d.ownerId.toHexString(),
@@ -168,6 +169,7 @@ export function createControlService({ devices, publisher, bus, now, log }: Cont
         ).lean<DeviceDoc>();
         if (cleared) await publish(cleared);
       }
+      return d._id.toHexString();
     },
 
     async onCmdAck(hardwareId: string, ack: CommandAckPayload) {

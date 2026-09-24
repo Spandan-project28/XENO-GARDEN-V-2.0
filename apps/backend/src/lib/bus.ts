@@ -19,6 +19,7 @@ export interface BusEvents {
   'device.status': { deviceId: string; ownerId: string; online: boolean; at: Date };
   'device.event': { deviceId: string; ownerId: string; event: EventPayload; at: Date };
   'device.cmdAck': { deviceId: string; ownerId: string; ack: CommandAckPayload };
+  'device.claimed': { deviceId: string; ownerId: string; hardwareId: string; desired: DesiredState };
   'device.removed': { deviceId: string; ownerId: string; hardwareId: string };
   'alert.opened': { ownerId: string; alert: AlertPublic };
   'alert.updated': { ownerId: string; alert: AlertPublic };

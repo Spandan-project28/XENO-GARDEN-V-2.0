@@ -7,3 +7,4 @@ export * from './schemas/alert.js';
 export * from './schemas/plant.js';
 export * from './mqtt/index.js';
 export * from './automation/index.js';
+export * from './realtime/index.js';

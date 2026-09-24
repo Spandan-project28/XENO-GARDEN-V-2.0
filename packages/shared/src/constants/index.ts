@@ -144,6 +144,8 @@ export const SOCKET = {
     status: 'status',
     alert: 'alert',
     event: 'device_event',
+    cmdAck: 'cmd_ack',
+    deviceRemoved: 'device_removed',
   },
 } as const;
 

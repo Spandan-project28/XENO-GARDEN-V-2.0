@@ -18,7 +18,7 @@ export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     HOST: z.string().default('0.0.0.0'),
-    PORT: z.coerce.number().int().min(1).max(65535).default(4000),
+    PORT: z.coerce.number().int().min(0).max(65535).default(4000),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 
     MONGO_URI: z.string().min(1, 'MONGO_URI is required (e.g. mongodb://localhost:27017/xeno_garden)'),
@@ -32,7 +32,7 @@ export const envSchema = z
 
     /** Run an in-process MQTT broker (aedes). Devices authenticate against the database. */
     MQTT_EMBEDDED: bool.default(true),
-    MQTT_EMBEDDED_PORT: z.coerce.number().int().min(1).max(65535).default(1883),
+    MQTT_EMBEDDED_PORT: z.coerce.number().int().min(0).max(65535).default(1883),
     /** External broker for the backend service account (used when MQTT_EMBEDDED=false). */
     MQTT_URL: z.string().optional(),
     MQTT_USERNAME: z.string().optional(),

@@ -1,0 +1,31 @@
+{
+  "name": "xeno-garden",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Xeno Garden v2 — smart irrigation: ESP32 + cloud backend + mobile app",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.1"
+  },
+  "packageManager": "npm@11.19.0"
+}

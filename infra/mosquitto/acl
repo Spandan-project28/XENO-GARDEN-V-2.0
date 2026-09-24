@@ -1,0 +1,6 @@
+# Backend service account can see everything under the app namespace.
+user xg-backend
+topic readwrite xg/v1/#
+
+# Each device may only use its own subtree. %u = MQTT username (the device's hardwareId).
+pattern readwrite xg/v1/%u/#

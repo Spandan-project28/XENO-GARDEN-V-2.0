@@ -419,7 +419,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 
 ### Phase 3 — Realtime & device control
 - [x] P3.1 MQTT plugin: connect with the service account, subscribe `xg/v1/+/{telemetry,reported,status,event,cmd/ack}`, validate payloads, route to services. Reconnect handling. Test with aedes.
-- [ ] P3.2 Telemetry ingest → `readings`. Update `devices.lastSeenAt/online`. Drop and log invalid payloads.
+- [x] P3.2 Telemetry ingest → `readings`. Update `devices.lastSeenAt/online`. Drop and log invalid payloads.
 - [ ] P3.3 Shadow service: settings/mode/pump endpoints write `desired` (with version bump) and publish it retained. The `reported` handler stores device state. Pump command → `cmd` topic with `cmdId` + `expiresAt`; the ack updates status.
 - [ ] P3.4 Pump events: derive start/stop records with source and reason from reported pump transitions.
 - [ ] P3.5 Socket.IO gateway: JWT handshake, `subscribe` with ownership check, fan out telemetry/shadow/status/alert/cmd_ack. Tests with socket.io-client.

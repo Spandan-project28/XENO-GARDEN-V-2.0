@@ -428,7 +428,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 ### Phase 4 — Alerts & notifications
 - [x] P4.1 Alert engine: rules for LOW_MOISTURE (sustained for N minutes, not on every tick), SENSOR_FAULT, DEVICE_OFFLINE (LWT, or no telemetry for 3 × interval), PUMP_MAX_RUNTIME, HIGH_TEMP. Dedupe by upserting `count`/`lastSeenAt`. Auto-resolve when the condition clears.
 - [x] P4.2 Alert routes: list (cursor), ack, resolve. Tests, including dedup under 1000 rapid events.
-- [ ] P4.3 Notifications: push-token registration, Expo push sender behind an interface (a fake in tests), per-user preferences, throttling (at most 1 push per alert per 30 min).
+- [x] P4.3 Notifications: push-token registration, Expo push sender behind an interface (a fake in tests), per-user preferences, throttling (at most 1 push per alert per 30 min).
 
 ### Phase 5 — Simulator & end-to-end
 - [ ] P5.1 `apps/simulator` CLI: multiple devices, all scenarios from §8, using the shared automation implementation. It also responds to desired/cmd messages exactly as the firmware will.

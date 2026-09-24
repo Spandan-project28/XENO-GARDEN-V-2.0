@@ -127,6 +127,7 @@ export async function startRuntime(env: Env, opts: ContainerOptions & { skipDb?:
       offRemoved();
       offClaimed();
       services.alertEngine.stop();
+      services.notifications.stop();
       await realtime.close();
       await app.close().catch(() => {});
       await gateway.close();

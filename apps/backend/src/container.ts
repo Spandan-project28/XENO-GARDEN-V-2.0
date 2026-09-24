@@ -10,6 +10,8 @@ import { createAuthService } from './modules/auth/service.js';
 import { PublisherProxy } from './modules/control/publisher.js';
 import { createControlService } from './modules/control/service.js';
 import { createDeviceService } from './modules/devices/service.js';
+import { ExpoPushSender, NoopPushSender, type PushSender } from './modules/notifications/sender.js';
+import { createNotificationService } from './modules/notifications/service.js';
 import { createTelemetryIngest } from './modules/telemetry/ingest.js';
 import { createPumpEventService } from './modules/telemetry/pumpEvents.js';
 import { createReadingQueries } from './modules/telemetry/queries.js';
@@ -18,6 +20,7 @@ export interface ContainerOptions {
   now?: () => Date;
   log?: AppLogger;
   onBusError?: (err: unknown, event: string) => void;
+  pushSender?: PushSender;
 }
 
 /** Wires services together. The only place that knows how everything is constructed. */
@@ -42,6 +45,10 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     alerts,
     lowMoistureMinutes: env.ALERT_LOW_MOISTURE_MINUTES,
   });
+  const sender =
+    opts.pushSender ??
+    (env.PUSH_ENABLED && env.NODE_ENV !== 'test' ? new ExpoPushSender(env.EXPO_ACCESS_TOKEN) : new NoopPushSender());
+  const notifications = createNotificationService({ bus, sender, now, log });
 
   const runtime: RuntimeStatus = {
     mqttConnected: () => false,
@@ -55,7 +62,7 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     now,
     tokens,
     publisher,
-    services: { auth, devices, control, ingest, readings, pumpEvents, alerts, alertEngine },
+    services: { auth, devices, control, ingest, readings, pumpEvents, alerts, alertEngine, notifications },
     runtime,
     status: {
       db: isDbConnected,

@@ -8,6 +8,7 @@ import type { AuthService } from './modules/auth/service.js';
 import type { ControlService } from './modules/control/service.js';
 import type { PublisherProxy } from './modules/control/publisher.js';
 import type { DeviceService } from './modules/devices/service.js';
+import type { NotificationService } from './modules/notifications/service.js';
 import type { TelemetryIngest } from './modules/telemetry/ingest.js';
 import type { PumpEventService } from './modules/telemetry/pumpEvents.js';
 import type { ReadingQueries } from './modules/telemetry/queries.js';
@@ -21,6 +22,7 @@ export interface Services {
   pumpEvents: PumpEventService;
   alerts: AlertService;
   alertEngine: AlertEngine;
+  notifications: NotificationService;
 }
 
 /** Mutable runtime status, filled in by the runtime once MQTT is up. */

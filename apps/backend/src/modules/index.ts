@@ -3,6 +3,7 @@ import { alertRoutes } from './alerts/routes.js';
 import { authRoutes } from './auth/routes.js';
 import { controlRoutes } from './control/routes.js';
 import { deviceRoutes } from './devices/routes.js';
+import { notificationRoutes } from './notifications/routes.js';
 import { telemetryRoutes } from './telemetry/routes.js';
 
 /**
@@ -15,4 +16,5 @@ export const registerModules: FastifyPluginAsync = async (app) => {
   await app.register(controlRoutes);
   await app.register(telemetryRoutes);
   await app.register(alertRoutes);
+  await app.register(notificationRoutes);
 };

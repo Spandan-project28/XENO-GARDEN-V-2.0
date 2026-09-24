@@ -412,7 +412,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P1.5 Unit tests for everything above (100 % of the automation vectors).
 
 ### Phase 2 — Backend core
-- [ ] P2.1 Fastify app factory, Zod env config (fail fast with clear messages), pino, error handler (§7.2 error shape), `/v1/health`, Swagger, CORS allow-list from env, helmet, rate limiting.
+- [x] P2.1 Fastify app factory, Zod env config (fail fast with clear messages), pino, error handler (§7.2 error shape), `/v1/health`, Swagger, CORS allow-list from env, helmet, rate limiting.
 - [ ] P2.2 Mongo plugin plus all Mongoose models from §6, including the time-series collection, TTL, and the partial unique index on open alerts. Add index-creation tests.
 - [ ] P2.3 Auth module: register/login/refresh (rotation + reuse detection)/logout/me, argon2, JWT auth decorator. Integration tests.
 - [ ] P2.4 Devices module: claim (checks hwId + claim code, creates MQTT credentials), list/get/patch/delete, ownership guard on every `:id` route. Tests.

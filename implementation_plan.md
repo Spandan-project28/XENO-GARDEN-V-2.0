@@ -484,7 +484,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P8.1 Backend `insights` module: the `PlantHealthProvider` interface `{name, version, evaluate(input): Promise<HealthReport>}`, a provider registry chosen by env/flag, and the `RuleBasedHealthProvider` (moisture stability, watering frequency anomalies, heat stress from temperature/humidity trends). Scheduled daily evaluation plus an on-demand endpoint.
 - [x] P8.2 `services/ml`: FastAPI stub (`/v1/health/predict` accepting `{plantId, species?, readingsSummary, imageUrl?}` and returning a `HealthReport`-compatible JSON), a Dockerfile, and a contract test shared with the backend's `MlHealthProvider` HTTP adapter (disabled by flag).
 - [x] P8.3 Photo upload path behind the `photoUpload` flag: a pre-signed upload to object storage (interface first, with a local-disk implementation in dev).
-- [ ] P8.4 `docs/ML_INTEGRATION.md`: how to train or bring a model, the input/output contract, how to switch providers, and how to add a new health finding code to the app.
+- [x] P8.4 `docs/ML_INTEGRATION.md`: how to train or bring a model, the input/output contract, how to switch providers, and how to add a new health finding code to the app.
 
 ### Phase 9 — Hardening & deployment
 - [ ] P9.1 Security pass:

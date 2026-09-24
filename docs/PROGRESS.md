@@ -202,3 +202,7 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Mobile: `expo-image-picker` (permission copy in app.json), `features/insights/photoUpload.ts` (camera/library → signed PUT → attach), and a `PhotoCard` on Plant Health behind `flags.photoUpload`.
 - *Fixes found while testing:* LineChart scrub gesture now `runOnJS(true)` (it only sets React state). Slider gesture callbacks explicitly `'worklet'`. A test leaked mock state. The remaining 8 gesture warnings come from gesture-handler's own ReanimatedSwipeable under the Jest worklets mock, not our code.
 - *Verified:* backend photos int 7 (upload→attach→signed read, tampered 403, non-image 400, type mismatch 400, foreign plant 403, not-uploaded 400, other user 404, analyze carries the image URL) plus storage unit tests (expiry, traversal, sniffing). Mobile 21 suites / 108 tests. Typecheck and lint clean everywhere.
+
+## 2026-09-24 — P8.4 ML integration guide
+- *Changed:* `docs/ML_INTEGRATION.md`: architecture (provider port, registry fallback), the shared request/response contract field by field, finding codes and how to add new ones, a step-by-step model bring-up (features → training data export → implement `HealthModel` → register → test → deploy with `ML_SERVICE_URL`/`ML_API_KEY`), the image flow with signed URLs, and a contract-change checklist.
+- *Verified:* documentation task; the referenced commands and paths exist and pass (pytest 5/5, backend 125).

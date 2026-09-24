@@ -257,10 +257,10 @@ POST   /v1/me/push-tokens           register Expo push token
 POST   /v1/devices/claim            {hardwareId, claimCode} → {device, mqttCredentials}   (called by app during BLE onboarding)
 GET    /v1/devices                  list mine (with shadow + latest reading)
 GET    /v1/devices/:id              / PATCH (name, plantId) / DELETE (unclaim)
-PUT    /v1/devices/:id/settings     thresholds etc. → bumps desired.version, publishes desired
+PUT    /v1/devices/:id/settings     partial settings; merged + re-validated → bumps desired.version (CAS), publishes desired
 PUT    /v1/devices/:id/mode         {mode}
 POST   /v1/devices/:id/pump         {action: "ON"|"OFF", durationSec?} → {cmdId, device}; sets desired.manual. UI shows pending until reported.manualCmdId === cmdId
-POST   /v1/devices/:id/identify     blink LED
+POST   /v1/devices/:id/commands     {type: identify|reboot|pairing|calibrate_dry|calibrate_wet|factory_reset} → {cmdId} (device must be online)
 
 GET    /v1/devices/:id/readings     ?from&to&resolution=raw|5m|1h|1d  (server picks rollup; real time ranges)
 GET    /v1/devices/:id/readings/latest
@@ -420,7 +420,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 ### Phase 3 — Realtime & device control
 - [x] P3.1 MQTT plugin: connect with the service account, subscribe `xg/v1/+/{telemetry,reported,status,event,cmd/ack}`, validate payloads, route to services. Reconnect handling. Test with aedes.
 - [x] P3.2 Telemetry ingest → `readings`. Update `devices.lastSeenAt/online`. Drop and log invalid payloads.
-- [ ] P3.3 Shadow service: settings/mode/pump endpoints write `desired` (with version bump) and publish it retained. The `reported` handler stores device state. Pump command → `cmd` topic with `cmdId` + `expiresAt`; the ack updates status.
+- [x] P3.3 Shadow service: settings/mode/pump endpoints write `desired` (with version bump) and publish it retained. The `reported` handler stores device state. Pump command → `cmd` topic with `cmdId` + `expiresAt`; the ack updates status.
 - [ ] P3.4 Pump events: derive start/stop records with source and reason from reported pump transitions.
 - [ ] P3.5 Socket.IO gateway: JWT handshake, `subscribe` with ownership check, fan out telemetry/shadow/status/alert/cmd_ack. Tests with socket.io-client.
 - [ ] P3.6 Readings query: `from/to/resolution`, automatically choosing raw / 5 m bucket / hourly rollup. Hourly rollup job. Tests with seeded data.

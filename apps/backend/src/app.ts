@@ -41,16 +41,7 @@ export type App = FastifyInstance<
 export async function buildApp(deps: Deps): Promise<App> {
   const { env } = deps;
   const app = Fastify({
-    logger:
-      env.NODE_ENV === 'test'
-        ? false
-        : {
-            level: env.LOG_LEVEL,
-            redact: ['req.headers.authorization', 'req.body.password', 'req.body.refreshToken'],
-            ...(env.NODE_ENV === 'development'
-              ? { transport: { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss' } } }
-              : {}),
-          },
+    loggerInstance: deps.log as FastifyBaseLogger,
     genReqId: (req) => (req.headers['x-request-id'] as string | undefined) ?? randomUUID(),
     bodyLimit: 256 * 1024,
     trustProxy: true,

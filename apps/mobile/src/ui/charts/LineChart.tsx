@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { scheduleOnRN } from 'react-native-worklets';
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '@/design';
 import { Text } from '../Text';
@@ -90,11 +89,13 @@ export function LineChart({
   const onScrub = (px: number) => setCursor(nearest(px));
   const clear = () => setCursor(null);
 
+  // The scrubber only updates React state, so the whole gesture runs on the JS thread.
   const pan = Gesture.Pan()
+    .runOnJS(true)
     .minDistance(0)
-    .onBegin((e) => scheduleOnRN(onScrub, e.x))
-    .onUpdate((e) => scheduleOnRN(onScrub, e.x))
-    .onFinalize(() => scheduleOnRN(clear));
+    .onBegin((e) => onScrub(e.x))
+    .onUpdate((e) => onScrub(e.x))
+    .onFinalize(() => clear());
 
   const sel = cursor !== null ? points[cursor] : undefined;
 

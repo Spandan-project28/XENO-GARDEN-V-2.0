@@ -79,9 +79,11 @@ export function RangeSlider({
     .enabled(!disabled)
     .hitSlop(12)
     .onBegin(() => {
+      'worklet';
       start.set(lowX.value);
     })
     .onUpdate((e) => {
+      'worklet';
       lowX.set(Math.min(Math.max(0, start.value + e.translationX), highX.value - gapPx));
       const v = toValue(lowX.value);
       if (v !== lastLow.value) {
@@ -94,9 +96,11 @@ export function RangeSlider({
     .enabled(!disabled)
     .hitSlop(12)
     .onBegin(() => {
+      'worklet';
       start.set(highX.value);
     })
     .onUpdate((e) => {
+      'worklet';
       highX.set(Math.max(Math.min(usable, start.value + e.translationX), lowX.value + gapPx));
       const v = toValue(highX.value);
       if (v !== lastHigh.value) {
@@ -170,9 +174,11 @@ export function Slider({ min, max, step = 1, value, onChange, color, disabled, a
     .enabled(!disabled)
     .hitSlop(12)
     .onBegin(() => {
+      'worklet';
       start.set(x.value);
     })
     .onUpdate((e) => {
+      'worklet';
       const nx = Math.min(usable, Math.max(0, start.value + e.translationX));
       x.set(nx);
       const v = snap(min + (nx / usable) * (max - min), min, max, step);

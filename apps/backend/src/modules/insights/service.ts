@@ -94,8 +94,8 @@ export function createInsightsService({ registry, readings, pumpEvents, alerts, 
   }
 
   return {
-    async run(userId: string, plantId: string) {
-      return evaluatePlant(await ownedPlant(userId, plantId));
+    async run(userId: string, plantId: string, imageUrl: string | null = null) {
+      return evaluatePlant(await ownedPlant(userId, plantId), imageUrl);
     },
 
     async get(userId: string, plantId: string): Promise<HealthResponse> {

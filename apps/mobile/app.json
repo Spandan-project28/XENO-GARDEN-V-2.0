@@ -56,7 +56,14 @@
           "defaultChannel": "alerts"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Xeno Garden uses your photos so you can add a picture of your plant for health checks.",
+          "cameraPermission": "Xeno Garden uses the camera so you can photograph your plant for health checks."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

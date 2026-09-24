@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { HealthFinding, HealthReport, HealthStatus } from '@xeno/shared';
 import { router, useLocalSearchParams } from 'expo-router';
-import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, Info, Leaf, Sparkles, Sprout, XCircle } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, ImagePlus, Info, Leaf, Sparkles, Sprout, XCircle } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -14,6 +15,7 @@ import { relativeTime } from '@/lib/format';
 import { qk } from '@/lib/queryKeys';
 import { useNow } from '@/lib/useNow';
 import { Banner, Button, Card, EmptyState, Gauge, IconButton, Screen, SkeletonCard, Text, TextField, toast } from '@/ui';
+import { pickPlantPhoto, uploadPlantPhoto } from './photoUpload';
 
 export function PlantHealthScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -109,19 +111,7 @@ function Health({ plantId }: { plantId: string }) {
         </View>
       ) : null}
 
-      {flags.photoUpload ? (
-        <Card variant="tinted" tint={t.colors.waterSoft}>
-          <View style={{ flexDirection: 'row', gap: t.space.md, alignItems: 'center' }}>
-            <Camera size={24} color={t.colors.water} />
-            <View style={{ flex: 1 }}>
-              <Text variant="subheading">Photo check</Text>
-              <Text variant="caption" tone="textSecondary">
-                Snap a leaf to detect disease and pests with our plant model.
-              </Text>
-            </View>
-          </View>
-        </Card>
-      ) : null}
+      {flags.photoUpload ? <PhotoCard plantId={plantId} /> : null}
 
       {runButton}
 
@@ -195,5 +185,49 @@ function CreatePlant({ deviceId, deviceName }: { deviceId: string; deviceName: s
       <TextField label="Species (optional)" value={species} onChangeText={setSpecies} placeholder="e.g. Tomato, Basil, Monstera" maxLength={80} testID="plant-species" />
       <Button title="Save plant" onPress={() => create.mutate()} loading={create.isPending} disabled={!name.trim()} fullWidth testID="save-plant" />
     </View>
+  );
+}
+
+/** Photo check (feature-flagged): pick or take a photo, upload it, analyse with the active model. */
+function PhotoCard({ plantId }: { plantId: string }) {
+  const t = useTheme();
+  const qc = useQueryClient();
+  const plants = useQuery({ queryKey: qk.plants, queryFn: api.plants.list });
+  const photoUrl = plants.data?.find((p) => p.id === plantId)?.photoUrl ?? null;
+  const upload = useMutation({
+    mutationFn: async (source: 'camera' | 'library') => {
+      const photo = await pickPlantPhoto(source);
+      return photo ? uploadPlantPhoto(plantId, photo, true) : null;
+    },
+    onSuccess: (r) => {
+      if (!r) return;
+      void qc.invalidateQueries({ queryKey: qk.plants });
+      void qc.invalidateQueries({ queryKey: qk.plantHealth(plantId) });
+      toast.success('Photo added', 'Your plant was checked with the latest photo.');
+    },
+    onError: (err) => toast.error('Photo upload failed', errorMessage(err)),
+  });
+  return (
+    <Card testID="photo-card">
+      <View style={{ gap: t.space.md }}>
+        <Text variant="subheading">Photo check</Text>
+        {photoUrl ? (
+          <Image
+            source={{ uri: photoUrl }}
+            style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: t.radius.md }}
+            contentFit="cover"
+            accessibilityLabel="Latest plant photo"
+          />
+        ) : (
+          <Text variant="caption" tone="textSecondary">
+            Add a clear photo of the leaves. Image models use it to spot disease and pests.
+          </Text>
+        )}
+        <View style={{ flexDirection: 'row', gap: t.space.sm }}>
+          <Button title="Take photo" icon={Camera} size="md" style={{ flex: 1 }} loading={upload.isPending} onPress={() => upload.mutate('camera')} testID="photo-camera" />
+          <Button title="Choose" icon={ImagePlus} size="md" variant="secondary" style={{ flex: 1 }} disabled={upload.isPending} onPress={() => upload.mutate('library')} testID="photo-library" />
+        </View>
+      </View>
+    </Card>
   );
 }

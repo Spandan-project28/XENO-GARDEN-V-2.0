@@ -9,6 +9,7 @@ import type { ControlService } from './modules/control/service.js';
 import type { PublisherProxy } from './modules/control/publisher.js';
 import type { DeviceService } from './modules/devices/service.js';
 import type { InsightsService } from './modules/insights/service.js';
+import type { LocalDiskStorage } from './modules/media/storage.js';
 import type { NotificationService } from './modules/notifications/service.js';
 import type { PlantService } from './modules/plants/service.js';
 import type { TelemetryIngest } from './modules/telemetry/ingest.js';
@@ -46,6 +47,7 @@ export interface Deps {
   now: () => Date;
   tokens: AccessTokens;
   publisher: PublisherProxy;
+  media: LocalDiskStorage;
   services: Services;
   runtime: RuntimeStatus;
   status: {

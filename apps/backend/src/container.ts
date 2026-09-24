@@ -17,6 +17,8 @@ import { ProviderRegistry, type PlantHealthProvider } from './modules/insights/p
 import { RuleBasedHealthProvider } from './modules/insights/rules.js';
 import { createInsightsService } from './modules/insights/service.js';
 import { createPlantService } from './modules/plants/service.js';
+import { LocalDiskStorage } from './modules/media/storage.js';
+import { createHash } from 'node:crypto';
 import { createTelemetryIngest } from './modules/telemetry/ingest.js';
 import { createPumpEventService } from './modules/telemetry/pumpEvents.js';
 import { createReadingQueries } from './modules/telemetry/queries.js';
@@ -54,7 +56,12 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     opts.pushSender ??
     (env.PUSH_ENABLED && env.NODE_ENV !== 'test' ? new ExpoPushSender(env.EXPO_ACCESS_TOKEN) : new NoopPushSender());
   const notifications = createNotificationService({ bus, sender, now, log });
-  const plants = createPlantService();
+  const media = new LocalDiskStorage(
+    env.UPLOAD_DIR,
+    createHash('sha256').update(`${env.JWT_ACCESS_SECRET}:media`).digest('hex'),
+    now,
+  );
+  const plants = createPlantService({ storage: media });
   const providers: PlantHealthProvider[] = [new RuleBasedHealthProvider()];
   if (env.ML_SERVICE_URL) {
     providers.unshift(
@@ -76,6 +83,7 @@ export function createDeps(env: Env, opts: ContainerOptions = {}): Deps {
     now,
     tokens,
     publisher,
+    media,
     services: { auth, devices, control, ingest, readings, pumpEvents, alerts, alertEngine, notifications, plants, insights },
     runtime,
     status: {

@@ -4,6 +4,8 @@
  */
 import {
   alertCounts,
+  attachPhotoResponse,
+  photoUploadResponse,
   alertPublic,
   authResponse,
   authTokens,
@@ -97,6 +99,10 @@ export function createEndpoints(api: ApiClient) {
       remove: (id: string) => api.delete(`/v1/plants/${id}`, undefined, { schema: ok }),
       health: (id: string) => api.get(`/v1/plants/${id}/health`, { schema: healthResponse }),
       runHealth: (id: string) => api.post(`/v1/plants/${id}/health/run`, undefined, { schema: healthReport }),
+      photoUploadUrl: (id: string, contentType: 'image/jpeg' | 'image/png' | 'image/webp') =>
+        api.post(`/v1/plants/${id}/photos/upload-url`, { contentType }, { schema: photoUploadResponse }),
+      attachPhoto: (id: string, photoId: string, analyze: boolean) =>
+        api.post(`/v1/plants/${id}/photos`, { photoId, analyze }, { schema: attachPhotoResponse }),
     },
   };
 }

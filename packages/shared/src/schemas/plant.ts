@@ -53,3 +53,28 @@ export const healthResponse = z.object({
   history: z.array(healthReport),
 });
 export type HealthResponse = z.infer<typeof healthResponse>;
+
+export const photoContentType = z.enum(['image/jpeg', 'image/png', 'image/webp']);
+
+export const photoUploadRequest = z.object({ contentType: photoContentType });
+export type PhotoUploadRequest = z.infer<typeof photoUploadRequest>;
+
+export const signedUpload = z.object({
+  url: z.string(),
+  method: z.literal('PUT'),
+  headers: z.record(z.string(), z.string()),
+  expiresAt: isoDate,
+});
+
+export const photoUploadResponse = z.object({ photoId: z.string(), upload: signedUpload });
+export type PhotoUploadResponse = z.infer<typeof photoUploadResponse>;
+
+export const attachPhotoBody = z.object({
+  photoId: z.string().min(1).max(200),
+  /** Run a health check that includes the photo (for image models). */
+  analyze: z.boolean().default(false),
+});
+export type AttachPhotoBody = z.infer<typeof attachPhotoBody>;
+
+export const attachPhotoResponse = z.object({ plant: plantPublic, report: healthReport.nullable() });
+export type AttachPhotoResponse = z.infer<typeof attachPhotoResponse>;

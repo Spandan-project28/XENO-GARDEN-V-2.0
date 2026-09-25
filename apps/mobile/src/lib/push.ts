@@ -4,8 +4,8 @@
  * Android) and an EAS project id — without them registration is skipped gracefully.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
@@ -18,10 +18,37 @@ const TOKEN_KEY = 'xg.pushToken';
 
 export type PushStatus = 'unsupported' | 'undetermined' | 'denied' | 'granted';
 
+type NotificationsModule = typeof import('expo-notifications');
+
+/**
+ * expo-notifications throws at import time inside Expo Go on Android (remote push was removed
+ * there in SDK 53), so it is loaded lazily and only where it can work.
+ */
+let notificationsModule: NotificationsModule | null | undefined;
+function notifications(): NotificationsModule | null {
+  if (notificationsModule !== undefined) return notificationsModule;
+  if (
+    Platform.OS === 'web' ||
+    (Platform.OS === 'android' &&
+      Constants.executionEnvironment === ExecutionEnvironment.StoreClient)
+  ) {
+    notificationsModule = null;
+  } else {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      notificationsModule = require('expo-notifications') as NotificationsModule;
+    } catch {
+      notificationsModule = null;
+    }
+  }
+  return notificationsModule;
+}
+
 let handlerSet = false;
 /** Show alerts as banners even while the app is open. */
 export function configureNotificationHandler() {
-  if (handlerSet || Platform.OS === 'web') return;
+  const Notifications = notifications();
+  if (handlerSet || !Notifications) return;
   handlerSet = true;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -34,10 +61,10 @@ export function configureNotificationHandler() {
 }
 
 function supported(): boolean {
-  return Platform.OS !== 'web' && Device.isDevice && !!env.easProjectId;
+  return Device.isDevice && !!env.easProjectId && notifications() !== null;
 }
 
-async function ensureChannel() {
+async function ensureChannel(Notifications: NotificationsModule) {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync('alerts', {
     name: 'Garden alerts',
@@ -48,22 +75,26 @@ async function ensureChannel() {
 }
 
 export async function getPushStatus(): Promise<PushStatus> {
-  if (!supported()) return 'unsupported';
+  const Notifications = notifications();
+  if (!supported() || !Notifications) return 'unsupported';
   const { status } = await Notifications.getPermissionsAsync();
   return status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undetermined';
 }
 
 /** Gets the Expo token and registers it with the backend (idempotent). */
 export async function registerPushToken(ask: boolean): Promise<PushStatus> {
-  if (!supported()) return 'unsupported';
-  await ensureChannel();
+  const Notifications = notifications();
+  if (!supported() || !Notifications) return 'unsupported';
+  await ensureChannel(Notifications);
   let status = await getPushStatus();
   if (status === 'undetermined' && ask) {
     const res = await Notifications.requestPermissionsAsync();
     status = res.status === 'granted' ? 'granted' : 'denied';
   }
   if (status !== 'granted') return status;
-  const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: env.easProjectId! });
+  const { data: token } = await Notifications.getExpoPushTokenAsync({
+    projectId: env.easProjectId!,
+  });
   await api.notifications.registerToken(token, Platform.OS === 'ios' ? 'ios' : 'android');
   await AsyncStorage.setItem(TOKEN_KEY, token);
   return 'granted';
@@ -103,18 +134,23 @@ export function usePushRegistration() {
 
 /** Navigates to the deep link carried by a tapped notification; refreshes alerts on arrival. */
 export function usePushNavigation() {
-  const last = Notifications.useLastNotificationResponse();
   useEffect(() => {
-    if (!last || last.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
-    const url = last.notification.request.content.data?.url;
-    if (typeof url === 'string' && url.startsWith('/')) router.push(url as never);
-  }, [last]);
-
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    const sub = Notifications.addNotificationReceivedListener(() => {
+    const Notifications = notifications();
+    if (!Notifications) return;
+    const open = (res: import('expo-notifications').NotificationResponse | null) => {
+      if (!res || res.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+      const url = res.notification.request.content.data?.url;
+      if (typeof url === 'string' && url.startsWith('/')) router.push(url as never);
+    };
+    // Cold start: the tap that launched the app.
+    open(Notifications.getLastNotificationResponse());
+    const tapped = Notifications.addNotificationResponseReceivedListener(open);
+    const received = Notifications.addNotificationReceivedListener(() => {
       void queryClient.invalidateQueries({ queryKey: qk.alertsAll });
     });
-    return () => sub.remove();
+    return () => {
+      tapped.remove();
+      received.remove();
+    };
   }, []);
 }

@@ -14,6 +14,8 @@ export default defineConfig({
           name: 'unit',
           include: ['test/unit/**/*.test.ts'],
           environment: 'node',
+          // Some unit tests build the whole app; leave headroom when CI/turbo runs everything at once.
+          testTimeout: 20_000,
         },
       },
       {

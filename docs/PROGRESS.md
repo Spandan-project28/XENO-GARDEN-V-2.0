@@ -350,3 +350,23 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - `gradlew.bat` needs a full path under cmd.
   - The first full test run timed out under build CPU load; it passed when re-run alone.
 - *Verified:* the APK built (first build 26 min, rebuild 7 min), 98 MB, `garden.xeno.app`, minSdk 24 / target 36, arm64, with BLUETOOTH_SCAN/CONNECT, ACCESS_FINE_LOCATION, ACCESS_WIFI_STATE and POST_NOTIFICATIONS (checked with `aapt dump badging`). Mobile 28 suites / 152 tests, typecheck + lint clean.
+
+## 2026-10-01 — P10.12 Docs + full verification (v2.1 Simple Mode complete)
+- *Docs:*
+  - README gains "How to use it (simple mode)", the Expo Go demo with the virtual radio, the local APK, and "works on any internet".
+  - ARCHITECTURE gains Flow 1b (simple mode).
+  - Plan §7.4 updated (`Xeno-XXXX`, `info.mode`); DEPLOY quickest path; HARDWARE rejoin; API/SECURITY guest accounts.
+  - §14 human steps rewritten (no Expo account needed any more).
+- *Fix found in this pass:* a backend unit test timed out under full parallel load (5 s default); unit tests now get 20 s, like int/e2e.
+- *Verified with no caches:*
+  - turbo build/typecheck/lint/test **15/15**; backend integration **102**, e2e **7**;
+  - mobile **28 suites / 152 tests**, expo-doctor **21/21**, Android export OK, local APK built;
+  - simulator **15**; shared **65**; tools **7**; ML pytest **5/5**;
+  - firmware native **234/234**, ESP32 build SUCCESS (RAM 18.2 %, flash 63.3 %);
+  - `npm ls` clean; `npm audit` shows only the documented, accepted `decode-uri-component` advisory;
+  - live `npm run dev` + phone-role script: guest → Xeno 1/Xeno 2 online with data.
+- **Remaining human steps:**
+  - P6.15: install `dist/xeno-garden-dev.apk`.
+  - P7.11: flash and calibrate the board.
+  - P9.4: Atlas + Fly accounts, then `npm run deploy:cloud`.
+  - P9.6: build the release APK and test on three networks.

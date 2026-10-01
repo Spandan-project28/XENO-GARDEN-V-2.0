@@ -452,7 +452,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [x] P6.12 Push notification registration and handling (the permission flow plus a token POST).
 - [x] P6.13 Onboarding (BLE provisioning wizard, §9.8) against a **mock BLE transport interface**, so the flow can be tested without hardware; the real `react-native-ble-plx` transport sits behind the same interface.
 - [x] P6.14 Plant Health screen: consumes `/plants/:id/health`, with the photo card behind a feature flag.
-- [~] BLOCKED (needs Expo account + phone) P6.15 🧑 HUMAN: create an Expo account, run `eas build --profile development --platform android`, install it on the phone, and point it at the local backend through a tunnel or the deployed backend.
+- [~] BLOCKED (needs the phone) P6.15 🧑 HUMAN: the app is already built locally (`dist/xeno-garden-dev.apk`, P10.10; no Expo account needed). Install it on the phone and open it while `npm run dev` + `npx -w apps/mobile expo start --dev-client` run on the PC.
 
 ### Phase 7 — Firmware (ESP32, PlatformIO)
 - [x] P7.1 PlatformIO project: `esp32dev` and `native` envs, pinned library versions, `secrets.ini.example`, `config.h` with pins (GPIO4 DHT, GPIO34 soil, GPIO27 rain, GPIO26 relay active-LOW) and **no network secrets**.
@@ -557,7 +557,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - `npm run deploy:cloud` (`tools/deploy.mjs`): checks `fly` login; creates app and volume if missing; generates JWT and metrics secrets; asks only for the MongoDB connection string; deploys; prints the URL and the exact `EXPO_PUBLIC_API_URL` / firmware CA steps.
   - Dry-run mode is tested.
   - DEPLOY.md updated.
-- [ ] P10.12 Docs + full verification:
+- [x] P10.12 Docs + full verification:
   - README "How to use (simple)", the §15 flows reflected in ARCHITECTURE.md, HARDWARE.md (rejoin LED), API.md, BLE docs.
   - Run every §11 command with no caches, and update PROGRESS.md.
 
@@ -596,10 +596,10 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 
 | When | What the user must do | Why the loop can't |
 |---|---|---|
-| P6.15 | Expo account + dev build install on phone | Account and physical device |
+| P6.15 | Install `dist/xeno-garden-dev.apk` on the phone (already built, no Expo account) | Physical device |
 | P7.11 | Flash ESP32, calibrate soil sensor, test relay | Physical hardware |
-| P9.4 | Create Atlas + MQTT broker + backend host accounts, provide connection strings | Accounts, billing, secrets |
-| P9.6 | Production build + real-world multi-network test | Physical device and networks |
+| P9.4 | Create Atlas (free) + Fly.io accounts, then `npm run deploy:cloud -- --app <name>` | Accounts, billing, secrets |
+| P9.6 | `npm run android:apk -- --release --api https://<name>.fly.dev`, install, test on home WiFi / other WiFi / mobile data | Physical device and networks |
 
 Until those are done, everything is developed and verified against local Docker services, in-memory test infrastructure and the **simulator**. So nearly the whole project can be built and tested autonomously.
 

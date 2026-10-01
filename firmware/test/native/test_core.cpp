@@ -10,6 +10,7 @@
 
 #include "xg_automation.h"
 #include "xg_frames.h"
+#include "xg_pairing.h"
 #include "xg_shadow.h"
 
 static int g_failed = 0;
@@ -190,6 +191,32 @@ static void testManualClock() {
   CHECK(c.active && c.expiresAt == 5'000 + 600'000, "skew capped");
 }
 
+static void testPairing() {
+  PairingPolicy p(120000);
+  // Fresh device: setup mode until configured.
+  CHECK(p.update(false, false, false, 0) == PairMode::Setup, "unconfigured -> setup");
+  // Configured and online: nothing advertised.
+  CHECK(p.update(true, false, true, 1000) == PairMode::Off, "online -> off");
+  // WiFi drops: not immediately (router reboot), only after 2 minutes.
+  CHECK(p.update(true, false, false, 2000) == PairMode::Off, "just lost wifi -> off");
+  CHECK(p.update(true, false, false, 2000 + 119999) == PairMode::Off, "still under 2 min");
+  CHECK(p.update(true, false, false, 2000 + 120000) == PairMode::Rejoin, "2 min without wifi -> rejoin");
+  CHECK(p.update(true, false, false, 500000) == PairMode::Rejoin, "stays in rejoin");
+  // Back online: rejoin ends at once.
+  CHECK(p.update(true, false, true, 500001) == PairMode::Off, "wifi back -> off");
+  // A short blip restarts the clock.
+  CHECK(p.update(true, false, false, 600000) == PairMode::Off, "new outage starts the clock again");
+  CHECK(p.update(true, false, true, 650000) == PairMode::Off, "recovered before 2 min");
+  CHECK(p.update(true, false, false, 700000) == PairMode::Off, "another outage");
+  CHECK(p.update(true, false, false, 700000 + 119000) == PairMode::Off, "clock was reset");
+  // The owner's button/command always opens setup (claim code readable), even while offline.
+  CHECK(p.update(true, true, false, 900000) == PairMode::Setup, "setup window wins over rejoin");
+  CHECK(p.update(true, true, true, 900001) == PairMode::Setup, "setup window while online");
+  CHECK(p.update(true, false, true, 900002) == PairMode::Off, "window closed -> off");
+  CHECK(strcmp(pairModeName(PairMode::Rejoin), "rejoin") == 0, "names");
+  CHECK(strcmp(pairModeName(PairMode::Setup), "setup") == 0, "names");
+}
+
 int main(int argc, char** argv) {
   const char* vectors = argc > 1 ? argv[1] : "../packages/shared/test-vectors/automation.json";
   testVectors(vectors);
@@ -197,6 +224,7 @@ int main(int argc, char** argv) {
   testFrames();
   testShadow();
   testManualClock();
+  testPairing();
   printf("\n%d checks passed, %d failed\n", g_passed, g_failed);
   return g_failed ? 1 : 0;
 }

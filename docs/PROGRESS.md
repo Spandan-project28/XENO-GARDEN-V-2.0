@@ -310,3 +310,12 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Plain words: "Signal: Good" (no dBm), "Software", "Device ID".
   - The test query client disables mutation GC timers, so Jest exits cleanly.
 - *Verified:* typecheck + lint clean; 27 suites / 147 tests (card water → pump ON 600 s + Starting…, auto switch → manual, offline card can't water).
+
+## 2026-10-01 — P10.8 Firmware simple mode (rejoin)
+- *Changed:*
+  - `xg_core/xg_pairing`, a pure policy: Setup when unconfigured or when the owner opened it; Rejoin after 2 min (`REJOIN_AFTER_MS`) with no saved WiFi working; Off otherwise. A blip restarts the clock.
+  - `provisioning.cpp` is driven by the policy. `info` now carries `mode`, and the claim code is empty in rejoin. Cloud credentials are refused in rejoin. The mode never switches under a connected phone; the device lingers 15 s after online.
+  - BLE name is `Xeno-XXXX` (`XG_BLE_NAME_PREFIX`); firmware 2.1.0.
+  - Saved networks are only stored after a successful join, so rejoin can't erase them.
+  - HARDWARE.md (first start, rejoin, LED) and the ARCHITECTURE diagram updated.
+- *Verified:* native 234/234 (16 new pairing checks); ESP32 build SUCCESS (RAM 18.2 %, flash 63.3 %), no warnings in our code.

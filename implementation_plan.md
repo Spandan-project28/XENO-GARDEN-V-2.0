@@ -543,7 +543,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - Device detail keeps power features but leads with the same controls.
   - Plain-language copy everywhere; no jargon (RSSI → "Signal: Good").
   - Tests updated.
-- [ ] P10.8 Firmware simple-mode support:
+- [x] P10.8 Firmware simple-mode support:
   - BLE name `Xeno-XXXX`; `info.mode`.
   - **Rejoin mode:** when the device has saved networks but has been unable to join any of them for 2 min, it advertises in rejoin mode until it's online again. In rejoin mode it doesn't expose the claim code and rejects `cloud_creds`, accepting only `wifi_creds`. A stranger nearby can't take the device; the owner's app can give it new WiFi.
   - The pure policy lives in `xg_core` (`xg_pairing`) with native tests. ESP32 build passes.

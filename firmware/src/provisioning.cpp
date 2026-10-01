@@ -15,6 +15,7 @@
 #include "wifi_link.h"
 #include "xg_contract.h"
 #include "xg_frames.h"
+#include "xg_pairing.h"
 
 namespace provisioning {
 
@@ -34,10 +35,13 @@ static NimBLECharacteristic* cWifi = nullptr;
 static NimBLECharacteristic* cCloud = nullptr;
 static NimBLECharacteristic* cState = nullptr;
 
-static bool active = false;
-static int64_t pairingUntil = 0;  // 0 = no deadline
+static bool active = false;            // advertising / accepting a phone
+static int64_t setupUntil = -1;        // owner-opened setup window: -1 closed, 0 open-ended
+static int64_t lingerUntil = 0;        // stay reachable briefly after "online"
 static bool clientConnected = false;
 static String hwId;
+static xg::PairingPolicy policy(REJOIN_AFTER_MS);
+static xg::PairMode infoMode = xg::PairMode::Off;  // what the `info` characteristic says
 
 static xg::FrameAssembler wifiAsm;
 static xg::FrameAssembler cloudAsm;
@@ -107,14 +111,6 @@ void begin(const String& hardwareId, const String& bleName) {
   cWifi->setCallbacks(new WriteCb(1));
   cCloud->setCallbacks(new WriteCb(2));
 
-  JsonDocument info;
-  info["proto"] = XG_BLE_PROTOCOL_VERSION;
-  info["hwId"] = hwId;
-  info["fw"] = XG_FW_VERSION;
-  info["claimCode"] = storage::claimCode();
-  std::string infoJson;
-  serializeJson(info, infoJson);
-  cInfo->setValue(infoJson);
   notifyState("idle");
 
   svc->start();
@@ -123,29 +119,57 @@ void begin(const String& hardwareId, const String& bleName) {
   adv->setScanResponse(true);
 }
 
-void startPairing(uint32_t windowMs) {
-  pairingUntil = windowMs ? nowMs() + windowMs : 0;
+/** The `info` characteristic: the claim code is only readable in setup mode (ADR-018). */
+static void writeInfo(xg::PairMode m) {
+  JsonDocument info;
+  info["proto"] = XG_BLE_PROTOCOL_VERSION;
+  info["hwId"] = hwId;
+  info["fw"] = XG_FW_VERSION;
+  info["mode"] = m == xg::PairMode::Rejoin ? "rejoin" : "setup";
+  info["claimCode"] = m == xg::PairMode::Rejoin ? "" : storage::claimCode().c_str();
+  std::string out;
+  serializeJson(info, out);
+  cInfo->setValue(out);
+  infoMode = m;
+}
+
+static void startAdvertising() {
   if (active) return;
   active = true;
   NimBLEDevice::startAdvertising();
-  log_i("pairing mode on (%u ms)", windowMs);
+  log_i("BLE setup on (%s)", xg::pairModeName(infoMode));
 }
 
-void stopPairing() {
+static void stopAdvertising() {
   if (!active) return;
   active = false;
   NimBLEDevice::stopAdvertising();
   if (server) {
     for (auto h : server->getPeerDevices()) server->disconnect(h);
   }
-  log_i("pairing mode off");
+  log_i("BLE setup off");
+}
+
+void startPairing(uint32_t windowMs) {
+  setupUntil = windowMs ? nowMs() + windowMs : 0;
+  log_i("setup window opened (%u ms)", windowMs);
+}
+
+void stopPairing() {
+  setupUntil = -1;
+  lingerUntil = 0;
+  stopAdvertising();
 }
 
 bool pairing() { return active; }
 
+bool rejoining() { return active && infoMode == xg::PairMode::Rejoin; }
+
 void forgetBonds() { NimBLEDevice::deleteAllBonds(); }
 
 static void handleCloud(const std::string& json) {
+  // Rejoin mode only accepts new WiFi: cloud credentials could re-home the device.
+  if (infoMode == xg::PairMode::Rejoin) return notifyState("cloud_failed");
   JsonDocument doc;
   if (deserializeJson(doc, json)) return notifyState("cloud_failed");
   CloudConfig c;
@@ -251,8 +275,9 @@ void loop() {
     if (mqtt_link::connected()) {
       job = Job::None;
       notifyState("online");
-      // Give the app a moment to read the final state, then close the pairing window.
-      pairingUntil = now + 15000;
+      // Give the app a moment to read the final state, then close setup.
+      lingerUntil = now + 15000;
+      if (setupUntil == 0 || setupUntil > lingerUntil) setupUntil = lingerUntil;
     } else if (now - jobStarted > 25000) {
       job = Job::None;
       if (mqtt_link::lastFailureWasDns()) notifyState("wifi_failed", "no_internet");
@@ -260,8 +285,22 @@ void loop() {
     }
   }
 
-  // Close the pairing window when it expires (never while the phone is connected mid-setup).
-  if (active && pairingUntil && now > pairingUntil && !clientConnected && job == Job::None) stopPairing();
+  // Decide the mode: setup (new / owner asked), rejoin (lost WiFi for a while), or off.
+  const bool configured = wifi_link::hasSavedNetworks() && mqtt_link::hasCloud();
+  const bool setupWindow = setupUntil == 0 || (setupUntil > 0 && now < setupUntil);
+  if (setupUntil > 0 && now >= setupUntil) setupUntil = -1;
+  const xg::PairMode mode = policy.update(configured, setupWindow, wifi_link::connected(), now);
+
+  const bool busy = clientConnected || job != Job::None || now < lingerUntil;
+  if (mode != xg::PairMode::Off) {
+    // Never switch modes under a connected phone: it read `info` already.
+    if (mode != infoMode && !busy) writeInfo(mode);
+    if (infoMode == xg::PairMode::Off) writeInfo(mode);
+    startAdvertising();
+  } else if (active && !busy) {
+    stopAdvertising();
+    infoMode = xg::PairMode::Off;
+  }
 }
 
 }  // namespace provisioning

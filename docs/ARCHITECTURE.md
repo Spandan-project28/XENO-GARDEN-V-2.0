@@ -23,7 +23,7 @@ ESP32 firmware ──MQTT/TLS──► MQTT broker ◄──MQTT── Backend (
 
 ```
 User        App                      ESP32 (pairing mode)          Backend            Broker
- │ Add dev → │ scan BLE "XenoGarden-*" │                             │                  │
+ │ Add dev → │ scan BLE "Xeno-*"       │                             │                  │
  │           │── connect, read info ──►│ {hwId, fw, claimCode}       │                  │
  │           │── POST /devices/claim {hwId, claimCode} ─────────────►│ create device +  │
  │           │◄───────────────────── {device, mqttCredentials} ──────│ mqtt user/ACL    │

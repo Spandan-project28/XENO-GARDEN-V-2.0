@@ -2,6 +2,8 @@
 #include <Arduino.h>
 #include <esp_mac.h>
 
+#include "xg_contract.h"
+
 /** "xg-" + the 12-hex-digit factory MAC (lowercase). Stable for the life of the chip. */
 inline String hardwareId() {
   uint8_t mac[6];
@@ -11,10 +13,10 @@ inline String hardwareId() {
   return String(buf);
 }
 
-/** BLE advertised name: "XenoGarden-" + last 4 hex digits (uppercase). */
+/** BLE advertised name: "Xeno-" + last 4 hex digits (uppercase), e.g. "Xeno-AB12". */
 inline String bleName() {
   String id = hardwareId();
   String tail = id.substring(id.length() - 4);
   tail.toUpperCase();
-  return String("XenoGarden-") + tail;
+  return String(XG_BLE_NAME_PREFIX) + tail;
 }

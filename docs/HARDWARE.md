@@ -54,10 +54,12 @@ Put a 2–3 A fuse on the pump line.
 
 1. Flash the firmware: `pio run -e esp32dev -d firmware -t upload` (or ask whoever built the app for a `.bin`).
 2. Power on. The LED double-blinks, which means **pairing mode**.
-3. In the app: **Add device**. It finds `XenoGarden-XXXX` over Bluetooth, links it to your account and asks for your WiFi (2.4 GHz). No IP addresses anywhere.
-4. When the app says **Online**, you're done. The device remembers up to 5 networks and moves between them on its own.
+3. Open the app. It finds every new device nearby (advertised as `Xeno-XXXX`) and shows **"2 new devices nearby → Connect"**. Tap Connect. The app links them to your garden and gives them your WiFi. The phone's network is used when the device can see it (2.4 GHz). You type a WiFi password at most once; it is remembered for the next device. No IP addresses anywhere.
+4. The devices appear as **Xeno 1**, **Xeno 2**, … and you're done. Each device remembers up to 5 networks and moves between them on its own.
 
-To change WiFi later, use **Settings → Change WiFi network** in the app, or hold BOOT for 5 s to reopen pairing.
+**WiFi changed (new router or password)?** You don't need to do anything on the device. After 2 minutes without any known WiFi it goes into **rejoin mode** by itself. The next time you open the app nearby, it shows "Xeno 1 needs WiFi → Fix WiFi". In rejoin mode the device only accepts new WiFi details: it never reveals its claim code and refuses cloud credentials, so nobody nearby can take it over.
+
+You can also use **Settings → Change WiFi network** in the app, or hold BOOT for 5 s to reopen setup mode.
 
 ## Soil sensor calibration (recommended, 1 minute)
 
@@ -72,7 +74,7 @@ The values are stored on the device. The firmware handles either sensor directio
 
 | Pattern | Meaning |
 |---|---|
-| Fast double blink | Pairing mode, waiting for the app |
+| Fast double blink | Waiting for the app (setup mode, or rejoin mode after losing WiFi) |
 | Slow blink (1/s) | Joining WiFi |
 | Quick blink (2/s) | Reaching the cloud |
 | Short blip every 3 s | Online, all good |

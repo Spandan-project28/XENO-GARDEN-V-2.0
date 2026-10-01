@@ -2,7 +2,7 @@
 // Hardware + timing configuration. NO network secrets here: WiFi and broker credentials are
 // provisioned over Bluetooth by the app and stored in NVS (flash).
 
-#define XG_FW_VERSION "2.0.0"
+#define XG_FW_VERSION "2.1.0"
 
 // ── Pins (ESP32 DevKit) ──────────────────────────────────────────────────────
 #define PIN_DHT 4            // DHT11/DHT22 data
@@ -22,6 +22,8 @@
 #define SOIL_SAMPLES 16
 
 #define PAIRING_WINDOW_MS (120UL * 1000UL)
+// Saved WiFi unreachable this long -> advertise in rejoin mode so the app can give new WiFi.
+#define REJOIN_AFTER_MS (120LL * 1000LL)
 #define BUTTON_PAIRING_HOLD_MS 5000
 #define BUTTON_FACTORY_RESET_HOLD_MS 15000
 

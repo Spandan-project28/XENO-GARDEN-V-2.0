@@ -5,7 +5,7 @@
 
 #define XG_MQTT_ROOT "xg/v1"
 
-#define XG_BLE_NAME_PREFIX "XenoGarden-"
+#define XG_BLE_NAME_PREFIX "Xeno-"
 #define XG_BLE_SERVICE_UUID "6b1f0001-5e6a-4c2b-9d3e-8a7c1b2f4e10"
 #define XG_BLE_CHAR_INFO "6b1f0002-5e6a-4c2b-9d3e-8a7c1b2f4e10"
 #define XG_BLE_CHAR_WIFI_SCAN "6b1f0003-5e6a-4c2b-9d3e-8a7c1b2f4e10"

@@ -553,7 +553,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - Adds `expo-dev-client`; `npm run android:apk` does `expo prebuild` + `gradlew assembleDebug` and copies the APK to `dist/xeno-garden-dev.apk`.
   - Verify the APK is produced. Document installing it (USB/adb or copying the file).
   - Generated `android/` stays git-ignored (CNG).
-- [ ] P10.11 One-command cloud deploy:
+- [x] P10.11 One-command cloud deploy:
   - `npm run deploy:cloud` (`tools/deploy.mjs`): checks `fly` login; creates app and volume if missing; generates JWT and metrics secrets; asks only for the MongoDB connection string; deploys; prints the URL and the exact `EXPO_PUBLIC_API_URL` / firmware CA steps.
   - Dry-run mode is tested.
   - DEPLOY.md updated.

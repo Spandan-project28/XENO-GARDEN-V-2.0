@@ -6,6 +6,24 @@ There are two supported setups. **A** is the simplest.
 
 ---
 
+## Quickest path (one command, then one APK)
+
+**You need two free accounts:**
+- **MongoDB Atlas**: create an M0 cluster and a database user, allow network access from `0.0.0.0/0`, then copy the connection string.
+- **Fly.io**: a card is required, but a small always-on machine costs a few dollars a month.
+
+Then:
+
+```sh
+npm run deploy:cloud -- --app xeno-garden-<yourname>     # logs in, creates everything, asks for the Atlas string, deploys
+npm run android:setup                                     # once: Java + Android SDK on this PC (no Expo account)
+npm run android:apk -- --release --api https://xeno-garden-<yourname>.fly.dev
+```
+
+Install `dist/xeno-garden.apk` on every phone. It now works on any WiFi or mobile data. `npm run deploy:cloud -- --app … --dry-run` shows what it would do without changing anything; re-running it never overwrites existing secrets.
+
+The sections below explain the same steps by hand.
+
 ## A. One server (Fly.io): API + built-in MQTT broker
 
 Everything runs in one small always-on machine. `fly.toml` is ready in the repo root.

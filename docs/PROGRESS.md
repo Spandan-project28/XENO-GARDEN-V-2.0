@@ -329,3 +329,12 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 - *Verified:*
   - Simulator 15 (4 bridge tests); mobile 28 suites / 152 (bridge handoff, bridge down → cloud_failed, no-bridge mode, already-set-up devices hidden, dev-only bridge URL).
   - **Live run:** `npm run dev` on this PC (LAN 10.107.23.12, detected automatically), then a script playing the phone: guest session → claimed `Xeno 1`/`Xeno 2` → bridge 200 → both **online with live soil readings** within seconds.
+
+## 2026-10-01 — P10.11 One-command cloud deploy
+- *Changed:* `npm run deploy:cloud -- --app <name>` (`tools/deploy.mjs`):
+  - checks the Fly CLI and login (opens the browser login); creates the app and the `xg_data` volume only if missing;
+  - generates the JWT + metrics secrets once and never overwrites them; asks only for the Atlas URI (or reads `$MONGO_URI`); secret values go through `fly secrets import` stdin and are never on the command line or in logs;
+  - deploys with remote builders (no local Docker), sets `DEVICE_BROKER_HOST=<app>.fly.dev` automatically, and waits for `/v1/health`;
+  - prints the next steps. `--dry-run` shows the plan.
+  - DEPLOY.md now starts with a three-command quickest path.
+- *Verified:* 7 `node --test` cases on the pure planner (fresh / re-run / host follows the app name / env URI skips the prompt / no secret values in the plan / invalid names / helpers), via `npm run test:tools`. The live CLI paths were checked for clear errors (no Fly CLI here; no app name).

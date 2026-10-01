@@ -18,7 +18,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "dev": "node tools/dev.mjs",
-    "test:all": "turbo run test && npm run test:int -w @xeno/backend && npm run test:e2e -w @xeno/backend"
+    "android:setup": "powershell -ExecutionPolicy Bypass -File tools/android/setup.ps1",
+    "android:apk": "node tools/android/build-apk.mjs",
+    "deploy:cloud": "node tools/deploy.mjs",
+    "test:all": "turbo run test && npm run test:int -w @xeno/backend && npm run test:e2e -w @xeno/backend && npm run test:tools",
+    "test:tools": "node --test tools/*.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

@@ -64,8 +64,15 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
+// The app's web build (browser on the dev PC) calls this from another origin, so allow it.
+const CORS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, OPTIONS',
+  'access-control-allow-headers': 'content-type',
+};
+
 function send(res: ServerResponse, status: number, body: unknown) {
-  res.writeHead(status, { 'content-type': 'application/json' });
+  res.writeHead(status, { 'content-type': 'application/json', ...CORS });
   res.end(JSON.stringify(body));
 }
 
@@ -113,6 +120,10 @@ export async function startBridge(o: BridgeOptions): Promise<Bridge> {
 
   const server: Server = createServer((req, res) => {
     void (async () => {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, CORS);
+        return res.end();
+      }
       if (req.method === 'GET' && req.url === '/v1/sim/health') return send(res, 200, { ok: true, devices: devices.size });
       if (req.method !== 'POST' || req.url !== '/v1/sim/provision') return send(res, 404, { error: 'not found' });
       let body: BridgeProvisionBody;

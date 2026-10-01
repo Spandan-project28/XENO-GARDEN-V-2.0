@@ -96,6 +96,15 @@ describe('virtual radio bridge', () => {
     expect(b.devices.size).toBe(0);
   });
 
+  it('allows the web build of the app to call it (CORS preflight)', async () => {
+    const b = await start();
+    const pre = await fetch(`${b.url}/v1/sim/provision`, { method: 'OPTIONS' });
+    expect(pre.status).toBe(204);
+    expect(pre.headers.get('access-control-allow-origin')).toBe('*');
+    expect(pre.headers.get('access-control-allow-headers')).toContain('content-type');
+    expect((await post(b, body())).headers.get('access-control-allow-origin')).toBe('*');
+  });
+
   it('remembers provisioned devices across restarts (dev convenience)', async () => {
     const file = join(mkdtempSync(join(tmpdir(), 'xg-bridge-')), 'state.json');
     let b = await start(file);

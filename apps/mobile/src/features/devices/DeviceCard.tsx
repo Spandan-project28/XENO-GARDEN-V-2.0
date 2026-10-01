@@ -6,7 +6,7 @@ import { useTheme } from '@/design';
 import { formatPct, formatTemp, moistureState, pumpReasonText, relativeTime } from '@/lib/format';
 import { usePrefs } from '@/lib/prefs';
 import { useNow } from '@/lib/useNow';
-import { Badge, Button, Card, Gauge, Text, Toggle } from '@/ui';
+import { Badge, Button, Card, Gauge, PressableScale, Text, Toggle } from '@/ui';
 import { pumpState } from './hooks';
 import { useDeviceMutations } from './mutations';
 import { allowedDurations, derivePumpUi, type PendingCommand } from './pumpUi';
@@ -15,13 +15,32 @@ export function DeviceStatusBadge({ device, now }: { device: DevicePublic; now: 
   const t = useTheme();
   const pump = pumpState(device);
   if (!device.online) {
-    return <Badge label={`Offline · ${relativeTime(device.lastSeenAt, now)}`} color={t.colors.textSecondary} dot />;
+    return (
+      <Badge
+        label={`Offline · ${relativeTime(device.lastSeenAt, now)}`}
+        color={t.colors.textSecondary}
+        dot
+      />
+    );
   }
-  if (pump.on) return <Badge label="Watering" color={t.colors.water} background={t.colors.waterSoft} dot pulse />;
-  return <Badge label="Online" color={t.colors.accent} background={t.colors.accentSoft} dot pulse />;
+  if (pump.on)
+    return (
+      <Badge label="Watering" color={t.colors.water} background={t.colors.waterSoft} dot pulse />
+    );
+  return (
+    <Badge label="Online" color={t.colors.accent} background={t.colors.accentSoft} dot pulse />
+  );
 }
 
-export function DeviceCard({ device, now, onPress }: { device: DevicePublic; now: number; onPress: () => void }) {
+export function DeviceCard({
+  device,
+  now,
+  onPress,
+}: {
+  device: DevicePublic;
+  now: number;
+  onPress: () => void;
+}) {
   const t = useTheme();
   const units = usePrefs((s) => s.units);
   const latest = device.latest;
@@ -33,47 +52,87 @@ export function DeviceCard({ device, now, onPress }: { device: DevicePublic; now
   const pump = pumpState(device);
 
   return (
-    <Card
-      onPress={onPress}
-      padding={t.space.xl}
-      accessibilityLabel={`${device.name}. Soil moisture ${formatPct(soil)} percent. ${device.online ? 'Online' : 'Offline'}.`}
-      testID={`device-card-${device.id}`}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space.md }}>
-        <View style={{ flex: 1, gap: 6 }}>
-          <Text variant="heading" numberOfLines={1}>
-            {device.name}
-          </Text>
-          <DeviceStatusBadge device={device} now={now} />
+    <Card padding={t.space.xl}>
+      {/* The readings open the device; the action buttons sit outside, so no button is nested in another. */}
+      <PressableScale
+        onPress={onPress}
+        accessibilityLabel={`${device.name}. Soil moisture ${formatPct(soil)} percent. ${device.online ? 'Online' : 'Offline'}.`}
+        testID={`device-card-${device.id}`}
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: t.space.md,
+          }}
+        >
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text variant="heading" numberOfLines={1}>
+              {device.name}
+            </Text>
+            <DeviceStatusBadge device={device} now={now} />
+          </View>
         </View>
-      </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg, marginVertical: t.space.lg }}>
-        <Gauge value={soil} size={112} stroke={10} color={gaugeColor} band={{ from: s.moistureLow, to: s.moistureHigh }} />
-        <View style={{ flex: 1, gap: t.space.xs }}>
-          <Text variant="overline" tone="textSecondary">
-            Soil moisture
-          </Text>
-          <Text variant="subheading" numberOfLines={2}>
-            {state === 'dry' ? 'Thirsty' : state === 'wet' ? 'Very wet' : state === 'ok' ? 'Happy' : 'No reading'}
-          </Text>
-          <Text variant="caption" tone="textSecondary" numberOfLines={2}>
-            {pumpReasonText(pump.reason)}
-          </Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.space.lg,
+            marginVertical: t.space.lg,
+          }}
+        >
+          <Gauge
+            value={soil}
+            size={112}
+            stroke={10}
+            color={gaugeColor}
+            band={{ from: s.moistureLow, to: s.moistureHigh }}
+          />
+          <View style={{ flex: 1, gap: t.space.xs }}>
+            <Text variant="overline" tone="textSecondary">
+              Soil moisture
+            </Text>
+            <Text variant="subheading" numberOfLines={2}>
+              {state === 'dry'
+                ? 'Thirsty'
+                : state === 'wet'
+                  ? 'Very wet'
+                  : state === 'ok'
+                    ? 'Happy'
+                    : 'No reading'}
+            </Text>
+            <Text variant="caption" tone="textSecondary" numberOfLines={2}>
+              {pumpReasonText(pump.reason)}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      <View style={{ flexDirection: 'row', gap: t.space.sm }}>
-        <Pill icon={Thermometer} color={t.colors.sun} bg={t.colors.sunSoft} text={`${temp.value}${temp.unit}`} label="Temperature" />
-        <Pill icon={Droplets} color={t.colors.humidity} bg={t.colors.humiditySoft} text={`${formatPct(latest?.humidity)}%`} label="Humidity" />
-        <Pill
-          icon={latest?.rain ? CloudRain : Sun}
-          color={t.colors.rain}
-          bg={t.colors.rainSoft}
-          text={latest ? (latest.rain ? 'Rain' : 'Dry') : '—'}
-          label="Rain"
-        />
-      </View>
+        <View style={{ flexDirection: 'row', gap: t.space.sm }}>
+          <Pill
+            icon={Thermometer}
+            color={t.colors.sun}
+            bg={t.colors.sunSoft}
+            text={`${temp.value}${temp.unit}`}
+            label="Temperature"
+          />
+          <Pill
+            icon={Droplets}
+            color={t.colors.humidity}
+            bg={t.colors.humiditySoft}
+            text={`${formatPct(latest?.humidity)}%`}
+            label="Humidity"
+          />
+          <Pill
+            icon={latest?.rain ? CloudRain : Sun}
+            color={t.colors.rain}
+            bg={t.colors.rainSoft}
+            text={latest ? (latest.rain ? 'Rain' : 'Dry') : '—'}
+            label="Rain"
+          />
+        </View>
+      </PressableScale>
 
       <QuickActions device={device} />
     </Card>
@@ -97,7 +156,8 @@ function QuickActions({ device }: { device: DevicePublic }) {
     if (busy || !device.online) return;
     const action = running ? 'OFF' : 'ON';
     pump.mutate(action === 'ON' ? { action, durationSec: duration } : { action }, {
-      onSuccess: (r) => setPending({ action, version: r.device.desired.version, since: Date.now() }),
+      onSuccess: (r) =>
+        setPending({ action, version: r.device.desired.version, since: Date.now() }),
     });
   };
 
@@ -112,7 +172,9 @@ function QuickActions({ device }: { device: DevicePublic }) {
           : 'Water now';
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md, marginTop: t.space.lg }}>
+    <View
+      style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md, marginTop: t.space.lg }}
+    >
       <Button
         title={title}
         icon={running ? Square : Droplets}
@@ -122,7 +184,9 @@ function QuickActions({ device }: { device: DevicePublic }) {
         loading={pump.isPending}
         disabled={!device.online}
         style={{ flex: 1 }}
-        accessibilityHint={running ? 'Stops the pump' : `Waters for ${Math.round(duration / 60)} minutes`}
+        accessibilityHint={
+          running ? 'Stops the pump' : `Waters for ${Math.round(duration / 60)} minutes`
+        }
         testID={`card-water-${device.id}`}
       />
       <View

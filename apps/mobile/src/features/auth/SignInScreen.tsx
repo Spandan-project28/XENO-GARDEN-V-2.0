@@ -78,7 +78,6 @@ export function SignInScreen() {
           testID="sign-in-password"
         />
         <Button title="Sign in" onPress={submit} loading={signIn.isPending} fullWidth testID="sign-in-submit" />
-        <Button title="New here? Create an account" variant="ghost" onPress={() => router.replace('/sign-up')} />
         {__DEV__ ? (
           <Button
             title="Use demo account"

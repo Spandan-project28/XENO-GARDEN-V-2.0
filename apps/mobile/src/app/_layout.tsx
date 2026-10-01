@@ -14,11 +14,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfigErrorScreen } from '@/components/ConfigErrorScreen';
 import { env } from '@/config/env';
 import { ThemeProvider, useTheme } from '@/design';
+import { bootSession } from '@/lib/bootstrap';
 import { wireSignOutCleanup } from '@/lib/lifecycle';
 import { usePrefs } from '@/lib/prefs';
 import { configureNotificationHandler } from '@/lib/push';
 import { queryClient, queryPersister, wireQueryEnvironment } from '@/lib/queryClient';
-import { sessionStore, useSession } from '@/lib/session';
+import { useSession } from '@/lib/session';
 import { ToastHost } from '@/ui';
 
 void SplashScreen.preventAutoHideAsync();
@@ -40,7 +41,7 @@ export default function RootLayout() {
   const prefsReady = usePrefs((s) => s.hydrated);
 
   useEffect(() => {
-    void sessionStore.restore();
+    void bootSession();
   }, []);
 
   const ready = (fontsLoaded || !!fontError) && status !== 'loading' && prefsReady;

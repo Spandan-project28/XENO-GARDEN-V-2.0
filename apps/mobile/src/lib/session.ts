@@ -52,16 +52,17 @@ export const sessionStore = {
     void AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
   },
 
-  /** Restores the session at startup from the keychain + cached profile. */
+  /**
+   * Restores the session at startup from the keychain + cached profile. Returns false when there
+   * is none; the status then stays `loading` so the caller can start a guest session first
+   * (see lib/bootstrap) without flashing the welcome screen.
+   */
   async restore(): Promise<boolean> {
     const [refresh, cachedUser] = await Promise.all([
       secureStorage.get(REFRESH_KEY),
       AsyncStorage.getItem(USER_KEY),
     ]);
-    if (!refresh) {
-      useSession.setState({ status: 'signedOut', user: null, accessToken: null });
-      return false;
-    }
+    if (!refresh) return false;
     let user: UserPublic | null = null;
     try {
       user = cachedUser ? (JSON.parse(cachedUser) as UserPublic) : null;
@@ -71,6 +72,10 @@ export const sessionStore = {
     // Signed in optimistically; the first API call refreshes the access token (or signs out).
     useSession.setState({ status: 'signedIn', user, accessToken: null });
     return true;
+  },
+
+  markSignedOut() {
+    useSession.setState({ status: 'signedOut', user: null, accessToken: null });
   },
 
   async clear() {

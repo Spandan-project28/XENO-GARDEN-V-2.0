@@ -268,3 +268,11 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Backend: `POST /auth/guest` (5/min/IP) and `POST /auth/upgrade`; User email/password are optional with a partial unique index on email; login ignores password-less accounts; claim names devices `Xeno N` (lowest free number per owner).
   - Docs: API.md, SECURITY.md.
 - *Verified:* shared 65; backend integration 102 (guest session, many guests, upgrade keeps the id and works once, email clash 409, needs auth, default naming incl. reuse and per-owner numbering), unit 29, e2e 7; mobile typecheck + 111 tests.
+
+## 2026-10-01 — P10.3 Mobile invisible session
+- *Changed:*
+  - `lib/bootstrap.ts`: restore the session, or silently create a guest on first launch. The splash stays up meanwhile, so the welcome screen never flashes; single-flight.
+  - The welcome screen only appears after sign-out or when the first launch is offline: "Get started" (guest) plus "I already have an account", with an offline banner.
+  - The sign-up route is removed; the screen became "Save your garden" (`/save-garden`, upgrades the guest and keeps its devices).
+  - Settings for guests: "Only on this phone", Save your garden, "Sign in with email" (with a warning), and a guest sign-out warning offering to save first.
+- *Verified:* mobile typecheck + lint clean, 24 suites / 120 tests (bootstrap: first launch → guest without a signedOut flash, restore, offline fallback, no double guest; welcome start/offline; save garden; guest settings).

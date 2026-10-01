@@ -53,4 +53,27 @@ describe('SettingsScreen', () => {
     await waitFor(() => expect(useSession.getState().status).toBe('signedOut'));
     spy.mockRestore();
   });
+
+  it('guests see "Save your garden" and a sign-out warning', async () => {
+    useSession.setState({
+      status: 'signedIn',
+      accessToken: 'a',
+      user: { id: 'u', email: null, name: 'My garden', guest: true, createdAt: '' },
+    });
+    const titles: string[] = [];
+    const spy = jest.spyOn(Alert, 'alert').mockImplementation((title) => void titles.push(title));
+    await renderWithProviders(<SettingsScreen />);
+    expect(screen.getByText('Only on this phone')).toBeOnTheScreen();
+    expect(screen.getByTestId('save-garden')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId('sign-out'));
+    expect(titles).toEqual(['Your garden isn’t saved']);
+    expect(useSession.getState().status).toBe('signedIn');
+    spy.mockRestore();
+  });
+
+  it('email accounts do not see the save prompt', async () => {
+    await renderWithProviders(<SettingsScreen />);
+    expect(screen.queryByTestId('save-garden')).toBeNull();
+    expect(screen.getByText('ann@example.com')).toBeOnTheScreen();
+  });
 });

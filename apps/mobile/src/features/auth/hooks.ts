@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import type { LoginBody, RegisterBody } from '@xeno/shared';
+import type { LoginBody, UpgradeBody } from '@xeno/shared';
 import { api } from '@/lib/api';
 import { unregisterPushToken } from '@/lib/push';
 import { sessionStore } from '@/lib/session';
@@ -11,10 +11,19 @@ export function useSignIn() {
   });
 }
 
-export function useSignUp() {
+/** "Get started": a guest session, no sign-up (ADR-016). */
+export function useStartGuest() {
   return useMutation({
-    mutationFn: (body: RegisterBody) => api.auth.register(body),
+    mutationFn: () => api.auth.guest(),
     onSuccess: (res) => sessionStore.establish(res),
+  });
+}
+
+/** "Save your garden": attaches an email + password to the current guest account. */
+export function useSaveGarden() {
+  return useMutation({
+    mutationFn: (body: UpgradeBody) => api.auth.upgrade(body),
+    onSuccess: (user) => sessionStore.setUser(user),
   });
 }
 

@@ -1,6 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ALERT_TYPES, type AlertType, type NotificationPrefs } from '@xeno/shared';
-import { Bell, Info, LogOut, Moon, Pencil, Server, Smartphone, Sun, SunMoon, Thermometer } from 'lucide-react-native';
+import { router } from 'expo-router';
+import {
+  Bell,
+  CloudUpload,
+  Info,
+  LogIn,
+  LogOut,
+  Moon,
+  Pencil,
+  Server,
+  Smartphone,
+  Sun,
+  SunMoon,
+  Thermometer,
+} from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { env } from '@/config/env';
@@ -30,11 +44,33 @@ export function SettingsScreen() {
   const setUnits = usePrefs((s) => s.setUnits);
   const [editName, setEditName] = useState(false);
 
+  const guest = !!user?.guest;
   const confirmSignOut = () =>
-    Alert.alert('Sign out?', 'Your gardens keep running. Sign in again at any time.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
-    ]);
+    guest
+      ? Alert.alert(
+          'Your garden isn’t saved',
+          'This garden only lives on this phone. If you sign out without saving it to an email, you’ll lose access to its devices.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Save garden', onPress: () => router.push('/save-garden') },
+            { text: 'Sign out anyway', style: 'destructive', onPress: () => void signOut() },
+          ],
+        )
+      : Alert.alert('Sign out?', 'Your gardens keep running. Sign in again at any time.', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
+        ]);
+
+  // Signing in to a saved garden replaces this phone's guest garden, so make that explicit.
+  const confirmSwitchAccount = () =>
+    Alert.alert(
+      'Open a saved garden?',
+      'You’ll leave the garden on this phone. Save it first if you want to keep it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Continue', onPress: () => void signOut().then(() => router.push('/sign-in')) },
+      ],
+    );
 
   const initials = (user?.name ?? '?')
     .split(' ')
@@ -65,7 +101,7 @@ export function SettingsScreen() {
             <View style={{ flex: 1 }}>
               <Text variant="heading">{user?.name ?? 'You'}</Text>
               <Text variant="caption" tone="textSecondary">
-                {user?.email}
+                {guest ? 'Only on this phone' : user?.email}
               </Text>
             </View>
             <Pencil size={18} color={t.colors.textTertiary} />
@@ -96,6 +132,25 @@ export function SettingsScreen() {
             onChange={setUnits}
           />
         </View>
+
+        {guest ? (
+          <ListGroup title="Account">
+            <ListRow
+              icon={CloudUpload}
+              title="Save your garden"
+              subtitle="Add an email to use it on another phone"
+              onPress={() => router.push('/save-garden')}
+              testID="save-garden"
+            />
+            <ListRow
+              icon={LogIn}
+              title="Sign in with email"
+              subtitle="Open a garden you saved before"
+              onPress={confirmSwitchAccount}
+              testID="switch-account"
+            />
+          </ListGroup>
+        ) : null}
 
         <NotificationSettings />
 

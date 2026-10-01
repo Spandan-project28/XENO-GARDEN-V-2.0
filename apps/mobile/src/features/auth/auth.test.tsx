@@ -2,29 +2,39 @@ import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { ApiError } from '@/lib/api/client';
 import { useSession } from '@/lib/session';
 import { renderWithProviders } from '@/test/render';
+import { SaveGardenScreen } from './SaveGardenScreen';
 import { SignInScreen } from './SignInScreen';
-import { SignUpScreen } from './SignUpScreen';
+import { WelcomeScreen } from './WelcomeScreen';
 
 const mockLogin = jest.fn();
 const mockRegister = jest.fn();
+const mockGuest = jest.fn();
 jest.mock('@/lib/api', () => {
   const actual = jest.requireActual('@/lib/api/client');
   return {
     ...actual,
-    api: { auth: { login: (b: unknown) => mockLogin(b), register: (b: unknown) => mockRegister(b) } },
+    api: {
+      auth: {
+        login: (b: unknown) => mockLogin(b),
+        upgrade: (b: unknown) => mockRegister(b),
+        guest: () => mockGuest(),
+      },
+    },
   };
 });
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() } }));
 
 const authResponse = {
   accessToken: 'acc',
   refreshToken: 'ref-ref-ref-ref-ref-ref',
   expiresIn: 900,
-  user: { id: 'aaaaaaaaaaaaaaaaaaaaaaaa', email: 'a@b.co', name: 'Ann', createdAt: '2026-01-01T00:00:00.000Z' },
+  user: { id: 'aaaaaaaaaaaaaaaaaaaaaaaa', email: 'a@b.co', name: 'Ann', guest: false, createdAt: '2026-01-01T00:00:00.000Z' },
 };
 
 beforeEach(() => {
   mockLogin.mockReset();
   mockRegister.mockReset();
+  mockGuest.mockReset();
   useSession.setState({ status: 'signedOut', user: null, accessToken: null });
 });
 
@@ -59,10 +69,45 @@ describe('SignInScreen', () => {
   });
 });
 
-describe('SignUpScreen', () => {
+describe('WelcomeScreen', () => {
+  it('Get started creates a guest session (no sign-up form)', async () => {
+    mockGuest.mockResolvedValue({ ...authResponse, user: { ...authResponse.user, email: null, guest: true } });
+    await renderWithProviders(<WelcomeScreen />);
+    await fireEvent.press(screen.getByTestId('welcome-start'));
+    await waitFor(() => expect(useSession.getState().status).toBe('signedIn'));
+    expect(useSession.getState().user).toMatchObject({ guest: true });
+  });
+
+  it('explains when the phone is offline', async () => {
+    mockGuest.mockRejectedValue(new ApiError(0, 'NETWORK', 'offline'));
+    await renderWithProviders(<WelcomeScreen />);
+    await fireEvent.press(screen.getByTestId('welcome-start'));
+    expect(await screen.findByText('No internet connection')).toBeOnTheScreen();
+    expect(useSession.getState().status).toBe('signedOut');
+  });
+});
+
+describe('SaveGardenScreen', () => {
+  it('upgrades the guest account and keeps the session', async () => {
+    useSession.setState({
+      status: 'signedIn',
+      accessToken: 'acc',
+      user: { ...authResponse.user, email: null, guest: true, name: 'My garden' },
+    });
+    mockRegister.mockResolvedValue({ ...authResponse.user, email: 'a@b.co', name: 'Ann', guest: false });
+    await renderWithProviders(<SaveGardenScreen />);
+    await fireEvent.changeText(screen.getByTestId('sign-up-name'), 'Ann');
+    await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'A@b.co');
+    await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'long-enough-1');
+    await fireEvent.press(screen.getByTestId('sign-up-submit'));
+    await waitFor(() => expect(useSession.getState().user).toMatchObject({ guest: false, email: 'a@b.co' }));
+    expect(mockRegister).toHaveBeenCalledWith({ name: 'Ann', email: 'a@b.co', password: 'long-enough-1' });
+    expect(useSession.getState().status).toBe('signedIn');
+  });
+
   it('maps a duplicate email to the email field', async () => {
     mockRegister.mockRejectedValue(new ApiError(409, 'CONFLICT', 'exists'));
-    await renderWithProviders(<SignUpScreen />);
+    await renderWithProviders(<SaveGardenScreen />);
     await fireEvent.changeText(screen.getByTestId('sign-up-name'), 'Ann');
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'a@b.co');
     await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'long-enough-1');
@@ -71,7 +116,7 @@ describe('SignUpScreen', () => {
   });
 
   it('requires 8+ character passwords', async () => {
-    await renderWithProviders(<SignUpScreen />);
+    await renderWithProviders(<SaveGardenScreen />);
     await fireEvent.changeText(screen.getByTestId('sign-up-name'), 'Ann');
     await fireEvent.changeText(screen.getByTestId('sign-up-email'), 'a@b.co');
     await fireEvent.changeText(screen.getByTestId('sign-up-password'), 'short');

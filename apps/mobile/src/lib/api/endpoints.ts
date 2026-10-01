@@ -33,6 +33,7 @@ import {
   type ReadingResolution,
   type RegisterBody,
   type UpdateDeviceBody,
+  type UpgradeBody,
 } from '@xeno/shared';
 import { z } from 'zod';
 import type { ApiClient } from './client';
@@ -42,6 +43,8 @@ const ok = z.object({ ok: z.literal(true) });
 export function createEndpoints(api: ApiClient) {
   return {
     auth: {
+      guest: () => api.post('/v1/auth/guest', undefined, { auth: false, schema: authResponse }),
+      upgrade: (body: UpgradeBody) => api.post('/v1/auth/upgrade', body, { schema: userPublic }),
       register: (body: RegisterBody) => api.post('/v1/auth/register', body, { auth: false, schema: authResponse }),
       login: (body: LoginBody) => api.post('/v1/auth/login', body, { auth: false, schema: authResponse }),
       refresh: (refreshToken: string) =>

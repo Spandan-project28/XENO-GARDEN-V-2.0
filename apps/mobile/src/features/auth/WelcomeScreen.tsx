@@ -4,7 +4,9 @@ import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { BrandMark } from '@/components/BrandMark';
 import { useTheme } from '@/design';
-import { Button, Screen, Text } from '@/ui';
+import { ApiError } from '@/lib/api';
+import { Banner, Button, Screen, Text } from '@/ui';
+import { useStartGuest } from './hooks';
 
 const highlights = [
   { icon: Droplets, label: 'Waters itself' },
@@ -12,8 +14,15 @@ const highlights = [
   { icon: CloudSun, label: 'Knows the weather' },
 ];
 
+/**
+ * Shown only when there is no session: after signing out, or when the first launch couldn't reach
+ * the server. Normally the app creates a guest session silently and skips this screen entirely.
+ */
 export function WelcomeScreen() {
   const t = useTheme();
+  const start = useStartGuest();
+  const offline =
+    start.error instanceof ApiError && (start.error.code === 'NETWORK' || start.error.code === 'TIMEOUT');
   return (
     <Screen scroll={false} contentStyle={{ justifyContent: 'space-between' }}>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space.xxl }}>
@@ -56,7 +65,24 @@ export function WelcomeScreen() {
         </Animated.View>
       </View>
       <Animated.View entering={FadeInDown.delay(450).duration(700)} style={{ gap: t.space.md }}>
-        <Button title="Create account" onPress={() => router.push('/sign-up')} fullWidth testID="welcome-sign-up" />
+        {start.isError ? (
+          <Banner
+            tone="warning"
+            title={offline ? 'No internet connection' : 'Couldn’t reach Xeno Garden'}
+            message={
+              offline
+                ? 'Connect to WiFi or mobile data, then tap Get started.'
+                : 'Please try again in a moment.'
+            }
+          />
+        ) : null}
+        <Button
+          title="Get started"
+          onPress={() => start.mutate()}
+          loading={start.isPending}
+          fullWidth
+          testID="welcome-start"
+        />
         <Button
           title="I already have an account"
           variant="secondary"

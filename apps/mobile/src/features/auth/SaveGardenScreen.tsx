@@ -1,4 +1,4 @@
-import { registerBody } from '@xeno/shared';
+import { upgradeBody } from '@xeno/shared';
 import { router } from 'expo-router';
 import { ArrowLeft, Lock, Mail, User } from 'lucide-react-native';
 import { useRef, useState } from 'react';
@@ -6,15 +6,21 @@ import { View, type TextInput } from 'react-native';
 import { useTheme } from '@/design';
 import { ApiError, errorMessage } from '@/lib/api';
 import { validate, type FieldErrors } from '@/lib/forms';
-import { Banner, Button, IconButton, Screen, Text, TextField } from '@/ui';
-import { useSignUp } from './hooks';
+import { useSession } from '@/lib/session';
+import { Banner, Button, IconButton, Screen, Text, TextField, toast } from '@/ui';
+import { useSaveGarden } from './hooks';
 
 type Field = 'name' | 'email' | 'password';
 
-export function SignUpScreen() {
+/**
+ * "Save your garden": turns this phone's guest account into an email account (same devices), so
+ * the garden can be opened on another phone or after reinstalling. Entirely optional.
+ */
+export function SaveGardenScreen() {
   const t = useTheme();
-  const signUp = useSignUp();
-  const [name, setName] = useState('');
+  const save = useSaveGarden();
+  const current = useSession((s) => s.user);
+  const [name, setName] = useState(current?.guest ? '' : (current?.name ?? ''));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors<Field>>({});
@@ -24,10 +30,14 @@ export function SignUpScreen() {
 
   const submit = () => {
     setFormError(null);
-    const v = validate(registerBody, { name, email, password });
+    const v = validate(upgradeBody, { name, email, password });
     if (!v.ok) return setErrors(v.errors);
     setErrors({});
-    signUp.mutate(v.data, {
+    save.mutate(v.data, {
+      onSuccess: () => {
+        toast.success('Garden saved', 'Sign in with this email on any phone.');
+        router.back();
+      },
       onError: (err) => {
         if (err instanceof ApiError && err.code === 'CONFLICT') {
           setErrors({ email: 'An account with this email already exists' });
@@ -45,10 +55,11 @@ export function SignUpScreen() {
     >
       <View style={{ gap: t.space.xs, marginBottom: t.space.xxl }}>
         <Text variant="title" accessibilityRole="header">
-          Create your account
+          Save your garden
         </Text>
         <Text variant="body" tone="textSecondary">
-          One account for all your gardens, on any phone.
+          Add an email so you can open your garden on another phone, or after reinstalling the app. Your devices
+          stay exactly as they are.
         </Text>
       </View>
 
@@ -97,8 +108,7 @@ export function SignUpScreen() {
           onSubmitEditing={submit}
           testID="sign-up-password"
         />
-        <Button title="Create account" onPress={submit} loading={signUp.isPending} fullWidth testID="sign-up-submit" />
-        <Button title="Already have an account? Sign in" variant="ghost" onPress={() => router.replace('/sign-in')} />
+        <Button title="Save garden" onPress={submit} loading={save.isPending} fullWidth testID="sign-up-submit" />
       </View>
     </Screen>
   );

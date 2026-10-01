@@ -515,7 +515,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - The User model allows `email: null` (sparse unique index), and guests can't use `/auth/login`.
   - Claim assigns the default name `Xeno N`: the lowest free number among the owner's devices.
   - Integration tests; API.md + SECURITY.md updated.
-- [ ] P10.3 Mobile invisible session:
+- [x] P10.3 Mobile invisible session:
   - On first launch with no stored session, the app creates a guest session silently and opens straight to Home. No welcome or sign-in screens in the default path.
   - If the phone is offline on first launch, show a friendly retry screen in the same design language.
   - Settings → Account: "Save your garden" (upgrade to email) and "Sign in with email" (for a second phone). Sign-out of a guest account warns that its devices will be lost from this phone.

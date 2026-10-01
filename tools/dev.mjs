@@ -3,6 +3,8 @@
  * One-command local development — no Docker, no manual IPs:
  *
  *   npm run dev                 backend (watch) + embedded MQTT + local Mongo + 1 simulated device
+ *                               + the simulator's "virtual radio" (port 4100), so the app's demo
+ *                               devices (Expo Go has no Bluetooth) come alive when you set them up
  *   npm run dev -- --no-sim     without the simulator
  *   npm run dev -- --scenario drying --devices 2
  *
@@ -101,6 +103,7 @@ function run(name, cmd, cmdArgs, env) {
 }
 
 const lan = lanAddress();
+const SIM_BRIDGE_PORT = 4100;
 const port = Number(args.port);
 const mqttPort = Number(args['mqtt-port']);
 const apiUrl = `http://${lan}:${port}`;
@@ -110,7 +113,10 @@ const mongo = await startMongo();
 // Let the Expo app find the dev backend automatically.
 const mobileEnv = join(root, 'apps', 'mobile', '.env.local');
 if (existsSync(join(root, 'apps', 'mobile'))) {
-  writeFileSync(mobileEnv, `# written by tools/dev.mjs — do not commit\nEXPO_PUBLIC_API_URL=${apiUrl}\n`);
+  writeFileSync(
+    mobileEnv,
+    `# written by tools/dev.mjs — do not commit\nEXPO_PUBLIC_API_URL=${apiUrl}\nEXPO_PUBLIC_SIM_BRIDGE_URL=http://${lan}:${SIM_BRIDGE_PORT}\n`,
+  );
   log(`Mobile app will use ${apiUrl} (apps/mobile/.env.local)`);
 }
 
@@ -137,8 +143,21 @@ await waitForHealth(`http://127.0.0.1:${port}`);
 log(`Backend ready → ${apiUrl}  (Swagger: ${apiUrl}/docs, MQTT: ${lan}:${mqttPort})`);
 
 if (!args['no-sim']) {
-  run('simulator', 'npm', ['run', 'sim', '-w', '@xeno/simulator', '--', '--api', `http://127.0.0.1:${port}`, '--devices', args.devices, '--scenario', args.scenario], {});
-  log('Simulator running. Sign in to the app with  demo@xeno.garden / demo-garden-1');
+  run(
+    'simulator',
+    'npm',
+    [
+      'run', 'sim', '-w', '@xeno/simulator', '--',
+      '--api', `http://127.0.0.1:${port}`,
+      '--devices', args.devices,
+      '--scenario', args.scenario,
+      '--bridge-port', String(SIM_BRIDGE_PORT),
+      '--bridge-state', join(dataDir, 'sim-bridge.json'),
+    ],
+    {},
+  );
+  log('Simulator running. In the app, tap "Find my devices" to add the demo devices (Xeno-DEM1/DEM2).');
+  log('The simulator also runs its own device for the account demo@xeno.garden / demo-garden-1.');
 }
 
 const shutdown = async () => {

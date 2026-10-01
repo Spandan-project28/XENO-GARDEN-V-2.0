@@ -547,7 +547,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - BLE name `Xeno-XXXX`; `info.mode`.
   - **Rejoin mode:** when the device has saved networks but has been unable to join any of them for 2 min, it advertises in rejoin mode until it's online again. In rejoin mode it doesn't expose the claim code and rejects `cloud_creds`, accepting only `wifi_creds`. A stranger nearby can't take the device; the owner's app can give it new WiFi.
   - The pure policy lives in `xg_core` (`xg_pairing`) with native tests. ESP32 build passes.
-- [ ] P10.9 Demo parity: the mock BLE transport offers 2 simulated `Xeno-DEMO…` devices (plus a rejoin case) so the whole auto-setup can be exercised in Expo Go and in tests without hardware. Tests.
+- [x] P10.9 Demo parity: the mock BLE transport offers 2 simulated `Xeno-DEMO…` devices (plus a rejoin case) so the whole auto-setup can be exercised in Expo Go and in tests without hardware. Tests.
 - [ ] P10.10 Local Android app build without an Expo account:
   - `tools/android/setup.ps1` downloads a portable JDK 17 and the Android SDK (cmdline-tools, platform, build-tools, NDK as required) into `%LOCALAPPDATA%\xeno-android` (outside the repo).
   - Adds `expo-dev-client`; `npm run android:apk` does `expo prebuild` + `gradlew assembleDebug` and copies the APK to `dist/xeno-garden-dev.apk`.

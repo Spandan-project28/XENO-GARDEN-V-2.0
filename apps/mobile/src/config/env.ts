@@ -1,7 +1,8 @@
 import Constants from 'expo-constants';
 
-/** Port the backend listens on in local development (matches tools/dev.mjs). */
+/** Ports used in local development (match tools/dev.mjs). */
 const DEV_API_PORT = 4000;
+const DEV_SIM_BRIDGE_PORT = 4100;
 
 const trimSlash = (u: string) => u.replace(/\/+$/, '');
 
@@ -24,9 +25,29 @@ export function resolveApiUrl(
   return null;
 }
 
+/**
+ * The simulator's "virtual radio" (dev only): demo devices set up in the app come alive there.
+ * Never used in production builds.
+ */
+export function resolveSimBridgeUrl(
+  explicit: string | undefined,
+  hostUri: string | undefined | null,
+  isDev: boolean,
+): string | null {
+  if (!isDev) return null;
+  if (explicit && /^https?:\/\//.test(explicit.trim())) return trimSlash(explicit.trim());
+  const host = hostUri?.split(':')[0];
+  return host ? `http://${host}:${DEV_SIM_BRIDGE_PORT}` : null;
+}
+
 export const env = {
   apiUrl: resolveApiUrl(
     process.env.EXPO_PUBLIC_API_URL,
+    Constants.expoConfig?.hostUri ?? null,
+    __DEV__,
+  ),
+  simBridgeUrl: resolveSimBridgeUrl(
+    process.env.EXPO_PUBLIC_SIM_BRIDGE_URL,
     Constants.expoConfig?.hostUri ?? null,
     __DEV__,
   ),

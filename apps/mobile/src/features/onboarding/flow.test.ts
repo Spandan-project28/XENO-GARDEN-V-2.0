@@ -38,7 +38,7 @@ describe('ProvisioningFlow', () => {
     expect(flow.getState().devices[0]).toEqual(SIMULATED_DEVICE);
 
     await flow.chooseDevice(SIMULATED_DEVICE);
-    expect(deps.claim).toHaveBeenCalledWith('xg-de0000000001', 'DEMO2345');
+    expect(deps.claim).toHaveBeenCalledWith('xg-de0000000001', 'DEMX2345');
     expect(transport.lastSession?.cloudConfigured).toBe(true);
     expect(flow.getState().step).toBe('wifi');
     expect(flow.getState().networks[0]?.ssid).toBe('Home WiFi');

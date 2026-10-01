@@ -4,6 +4,7 @@ import { claimDevice, signIn, simIdentity } from './provision.js';
 import { scenarios, type ScenarioName } from './scenarios.js';
 import { MqttTransport } from './transport.js';
 
+export * from './bridge.js';
 export * from './device.js';
 export * from './physics.js';
 export * from './provision.js';

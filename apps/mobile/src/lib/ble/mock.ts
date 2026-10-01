@@ -10,10 +10,17 @@ import {
   FrameAssembler,
   toFrames,
   type BleInfoPayload,
+  type CloudCredsPayload,
   type ProvisioningStatePayload,
   type WifiNetwork,
 } from '@xeno/shared';
 import type { FoundDevice, ProvisioningSession, ProvisioningTransport } from './types';
+
+/**
+ * Dev "virtual radio": hands what a real device would have received to the simulator, which then
+ * runs a matching virtual device against the real broker (apps/simulator/src/bridge.ts).
+ */
+export type MockBridge = (body: { hwId: string; cloud: CloudCredsPayload; ssid: string }) => Promise<void>;
 
 export interface MockDeviceSpec {
   found: FoundDevice;
@@ -32,8 +39,8 @@ const demoInfo = (n: number, claimCode: string): BleInfoPayload => ({
 
 /** Two simulated devices in setup mode, as they'd appear fresh out of the box. */
 export const SIMULATED_DEVICES: MockDeviceSpec[] = [
-  { found: { id: 'sim-1', name: 'Xeno-DEM1', rssi: -42, simulated: true }, info: demoInfo(1, 'DEMO2345') },
-  { found: { id: 'sim-2', name: 'Xeno-DEM2', rssi: -55, simulated: true }, info: demoInfo(2, 'DEMO2346') },
+  { found: { id: 'sim-1', name: 'Xeno-DEM1', rssi: -42, simulated: true }, info: demoInfo(1, 'DEMX2345') },
+  { found: { id: 'sim-2', name: 'Xeno-DEM2', rssi: -55, simulated: true }, info: demoInfo(2, 'DEMX2346') },
 ];
 export const SIMULATED_DEVICE: FoundDevice = SIMULATED_DEVICES[0]!.found;
 
@@ -50,6 +57,7 @@ export class MockSession implements ProvisioningSession {
   private cloud = new FrameAssembler();
   /** Rejoin-mode devices already have their cloud credentials. */
   cloudConfigured: boolean;
+  cloudCreds: CloudCredsPayload | null = null;
   lastWifi: { ssid: string; password: string } | null = null;
   disconnected = false;
 
@@ -57,6 +65,7 @@ export class MockSession implements ProvisioningSession {
     private readonly info: BleInfoPayload,
     private readonly stepMs = 600,
     private readonly networks: WifiNetwork[] = MOCK_NETWORKS,
+    private readonly bridge: MockBridge | null = null,
   ) {
     this.cloudConfigured = info.mode === 'rejoin';
   }
@@ -70,7 +79,7 @@ export class MockSession implements ProvisioningSession {
     // Exercise the real framing path, like the firmware would receive it.
     let msg: string | null = null;
     for (const f of toFrames(JSON.stringify(creds), 40)) msg = this.cloud.push(f);
-    cloudCredsPayload.parse(JSON.parse(msg!));
+    this.cloudCreds = cloudCredsPayload.parse(JSON.parse(msg!));
     this.cloudConfigured = true;
   }
 
@@ -93,6 +102,13 @@ export class MockSession implements ProvisioningSession {
       this.emit({ s: 'connecting_cloud', ip: '192.168.1.42' });
       await sleep(this.stepMs);
       if (!this.cloudConfigured) return this.emit({ s: 'cloud_failed' });
+      if (this.bridge && this.cloudCreds) {
+        try {
+          await this.bridge({ hwId: this.info.hwId, cloud: this.cloudCreds, ssid });
+        } catch {
+          return this.emit({ s: 'cloud_failed' });
+        }
+      }
       this.emit({ s: 'online', ip: '192.168.1.42' });
     })();
   }
@@ -118,6 +134,7 @@ export class MockTransport implements ProvisioningTransport {
     private readonly stepMs = 600,
     /** Simulated devices that are already set up stop advertising (like the real firmware). */
     private readonly isSetUp: (hardwareId: string) => boolean = () => false,
+    private readonly bridge: MockBridge | null = null,
   ) {}
   lastSession: MockSession | null = null;
   /** Every session opened, per device id (tests inspect what each device received). */
@@ -143,7 +160,7 @@ export class MockTransport implements ProvisioningTransport {
     const spec = this.devices.find((d) => d.found.id === id);
     if (!spec) throw new Error(`unknown simulated device ${id}`);
     await sleep(this.stepMs / 2);
-    this.lastSession = new MockSession(spec.info, this.stepMs, spec.networks);
+    this.lastSession = new MockSession(spec.info, this.stepMs, spec.networks, this.bridge);
     this.sessions.set(id, this.lastSession);
     return this.lastSession;
   }

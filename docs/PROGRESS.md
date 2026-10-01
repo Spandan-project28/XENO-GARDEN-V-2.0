@@ -319,3 +319,13 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Saved networks are only stored after a successful join, so rejoin can't erase them.
   - HARDWARE.md (first start, rejoin, LED) and the ARCHITECTURE diagram updated.
 - *Verified:* native 234/234 (16 new pairing checks); ESP32 build SUCCESS (RAM 18.2 %, flash 63.3 %), no warnings in our code.
+
+## 2026-10-01 — P10.9 Demo parity (works in Expo Go, end to end)
+- *Changed:*
+  - Simulator "virtual radio" (`apps/simulator/src/bridge.ts`, `--bridge-port/--bridge-state`): when the app sets up a demo device, the phone's simulated BLE session POSTs the claimed cloud credentials and the WiFi name. The simulator starts a matching virtual device on the real broker and remembers it across restarts (`.data/sim-bridge.json`). Zod-validated, 4 KB cap, credentials must name the device.
+  - Mobile: `env.simBridgeUrl` (dev only, from `.env.local` or the Metro host); the mock session reports online only after the bridge accepts.
+  - `npm run dev` starts the bridge on port 4100 and writes `EXPO_PUBLIC_SIM_BRIDGE_URL`.
+  - Fixed: the demo claim codes contained "O", which is outside the claim-code alphabet, so demo claims had always been rejected (400). Now `DEMX2345`/`DEMX2346`.
+- *Verified:*
+  - Simulator 15 (4 bridge tests); mobile 28 suites / 152 (bridge handoff, bridge down → cloud_failed, no-bridge mode, already-set-up devices hidden, dev-only bridge URL).
+  - **Live run:** `npm run dev` on this PC (LAN 10.107.23.12, detected automatically), then a script playing the phone: guest session → claimed `Xeno 1`/`Xeno 2` → bridge 200 → both **online with live soil readings** within seconds.

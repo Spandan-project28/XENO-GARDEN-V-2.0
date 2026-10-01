@@ -6,7 +6,7 @@
  *   npm run sim -- --api https://api.example.com --email me@x.com --password ... --speed 20
  */
 import { parseArgs } from 'node:util';
-import { runSimulation } from './index.js';
+import { runSimulation, startBridge } from './index.js';
 import { SCENARIOS, scenarios, type ScenarioName } from './scenarios.js';
 
 const { values } = parseArgs({
@@ -19,6 +19,8 @@ const { values } = parseArgs({
     mqtt: { type: 'string' },
     speed: { type: 'string', default: '1' },
     seed: { type: 'string' },
+    'bridge-port': { type: 'string' },
+    'bridge-state': { type: 'string' },
     help: { type: 'boolean', short: 'h' },
   },
 });
@@ -26,7 +28,7 @@ const { values } = parseArgs({
 if (values.help) {
   // eslint-disable-next-line no-console
   console.log(
-    `xg-sim [--api URL] [--email E --password P] [--devices N] [--scenario S] [--speed X] [--mqtt URL]\n\nScenarios:\n${SCENARIOS.map(
+    `xg-sim [--api URL] [--email E --password P] [--devices N] [--scenario S] [--speed X] [--mqtt URL]\n       [--bridge-port P [--bridge-state FILE]]   virtual radio for the app's demo devices (dev)\n\nScenarios:\n${SCENARIOS.map(
       (s) => `  ${s.padEnd(14)} ${scenarios[s].description}`,
     ).join('\n')}`,
   );
@@ -58,6 +60,16 @@ const sim = await runSimulation({
 });
 
 log(`Signed in as ${values.email}. Open the app with this account to watch the devices.`);
+
+const bridge = values['bridge-port']
+  ? await startBridge({
+      port: Number(values['bridge-port']),
+      scenario: values.scenario as ScenarioName,
+      speed: Number(values.speed),
+      stateFile: values['bridge-state'],
+      log,
+    })
+  : null;
 const status = setInterval(() => {
   for (const d of sim.devices) {
     const r = d.reported();
@@ -69,6 +81,7 @@ const status = setInterval(() => {
 
 const shutdown = async () => {
   clearInterval(status);
+  await bridge?.stop();
   await sim.stop();
   process.exit(0);
 };

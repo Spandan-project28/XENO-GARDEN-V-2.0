@@ -11,7 +11,7 @@ const metrics = {
 };
 
 export const testQueryClient = () =>
-  new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } } });
+  new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } } });
 
 export function Providers({
   children,

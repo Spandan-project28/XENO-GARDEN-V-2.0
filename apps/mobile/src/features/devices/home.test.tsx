@@ -6,13 +6,26 @@ import { renderWithProviders } from '@/test/render';
 import { HomeScreen } from './HomeScreen';
 
 const mockList = jest.fn();
+const mockPump = jest.fn();
+const mockSetMode = jest.fn();
 jest.mock('@/lib/api', () => {
   const actual = jest.requireActual('@/lib/api/client');
-  return { ...actual, api: { devices: { list: () => mockList() } } };
+  return {
+    ...actual,
+    api: {
+      devices: {
+        list: () => mockList(),
+        pump: (...a: unknown[]) => mockPump(...a),
+        setMode: (...a: unknown[]) => mockSetMode(...a),
+      },
+    },
+  };
 });
 
 beforeEach(() => {
   mockList.mockReset();
+  mockPump.mockReset();
+  mockSetMode.mockReset();
   useSession.setState({ status: 'signedIn', accessToken: 'x', user: { id: 'u', email: 'a@b.co', name: 'Ann Smith', guest: false, createdAt: '' } });
 });
 
@@ -62,6 +75,27 @@ describe('HomeScreen', () => {
     expect(await screen.findAllByText('Watering')).toHaveLength(2); // badge + overview tile
     expect(screen.getByLabelText('Watering: 1')).toBeOnTheScreen();
     expect(screen.getByText('Watering — soil is dry')).toBeOnTheScreen();
+  });
+
+  it('waters and switches auto off straight from the card', async () => {
+    const d = makeDevice();
+    mockList.mockResolvedValue([d]);
+    mockPump.mockResolvedValue({ cmdId: 'c1', device: { ...d, desired: { ...d.desired, version: 2 } } });
+    mockSetMode.mockResolvedValue({ ...d, desired: { ...d.desired, mode: 'manual' } });
+    await renderWithProviders(<HomeScreen />);
+    await fireEvent.press(await screen.findByTestId(`card-water-${d.id}`));
+    expect(mockPump).toHaveBeenCalledWith(d.id, { action: 'ON', durationSec: 600 });
+    expect(await screen.findByText('Starting…')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByTestId(`card-auto-${d.id}`));
+    expect(mockSetMode).toHaveBeenCalledWith(d.id, 'manual');
+  });
+
+  it('cannot water an offline device from the card', async () => {
+    const d = makeDevice({ online: false });
+    mockList.mockResolvedValue([d]);
+    await renderWithProviders(<HomeScreen />);
+    await fireEvent.press(await screen.findByTestId(`card-water-${d.id}`));
+    expect(mockPump).not.toHaveBeenCalled();
   });
 
   it('offers a retry when loading fails', async () => {

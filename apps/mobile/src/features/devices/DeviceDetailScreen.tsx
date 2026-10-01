@@ -149,6 +149,8 @@ function DeviceDetail({
           </View>
         </Card>
 
+        <PumpControl device={device} />
+
         {/* Mode */}
         <Card>
           <View style={{ gap: t.space.md }}>
@@ -171,8 +173,6 @@ function DeviceDetail({
             </Text>
           </View>
         </Card>
-
-        <PumpControl device={device} />
 
         {/* Metrics */}
         <View style={{ flexDirection: 'row', gap: t.space.sm }}>
@@ -309,10 +309,10 @@ function DeviceHealth({ device, now }: { device: DevicePublic; now: number }) {
   const signal = rssi === null ? '—' : rssi > -60 ? 'Excellent' : rssi > -70 ? 'Good' : rssi > -80 ? 'Fair' : 'Weak';
   return (
     <ListGroup title="Device">
-      <ListRow icon={Wifi} title={r?.ssid ?? 'WiFi'} subtitle={rssi !== null ? `${signal} signal (${rssi} dBm)` : 'No report yet'} />
-      <ListRow icon={Cpu} title="Firmware" value={device.firmwareVersion ?? '—'} />
+      <ListRow icon={Wifi} title={r?.ssid ?? 'WiFi'} subtitle={rssi !== null ? `Signal: ${signal}` : 'No report yet'} />
+      <ListRow icon={Cpu} title="Software" value={device.firmwareVersion ?? '—'} />
       <ListRow icon={Clock} title="Last seen" value={device.online ? 'Now' : relativeTime(device.lastSeenAt, now)} />
-      <ListRow icon={Settings2} title="Hardware ID" subtitle={device.hardwareId} />
+      <ListRow icon={Settings2} title="Device ID" subtitle={device.hardwareId} />
     </ListGroup>
   );
 }

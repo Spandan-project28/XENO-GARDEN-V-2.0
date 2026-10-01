@@ -302,3 +302,11 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Fixed guests being greeted as "My".
   - No colour or token changes.
 - *Verified:* mobile typecheck + lint clean; 27 suites / 144 tests (full screen flow with one prompt, zero-typing, password validation, wrong password then fix, NearbyCard shows/hides, Home empty state → /setup, guest greeting); Android export OK.
+
+## 2026-10-01 — P10.7 Simpler everyday screens
+- *Changed:*
+  - Device cards have one-tap **Water now / Stop watering** (default duration within the safety limit; shows Starting…/Stopping… until the device confirms; disabled offline) and an **Auto** switch. The redundant mode badge is gone.
+  - Device detail leads with the pump control, then the mode.
+  - Plain words: "Signal: Good" (no dBm), "Software", "Device ID".
+  - The test query client disables mutation GC timers, so Jest exits cleanly.
+- *Verified:* typecheck + lint clean; 27 suites / 147 tests (card water → pump ON 600 s + Starting…, auto switch → manual, offline card can't water).

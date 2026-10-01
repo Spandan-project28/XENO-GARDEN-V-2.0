@@ -538,7 +538,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - The empty Home state is a single big "Find my devices" action.
   - The old wizard stays reachable as "Set up manually".
   - Same tokens and colours. Component tests.
-- [ ] P10.7 Simpler everyday screens:
+- [x] P10.7 Simpler everyday screens:
   - Home cards show moisture ring, status in plain words ("Soil is fine", "Watering…", "Needs water"), and one-tap **Water now** + **Auto** switch directly on the card.
   - Device detail keeps power features but leads with the same controls.
   - Plain-language copy everywhere; no jargon (RSSI → "Signal: Good").

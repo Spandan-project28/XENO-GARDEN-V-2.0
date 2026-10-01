@@ -1,11 +1,15 @@
 import type { DevicePublic } from '@xeno/shared';
-import { CloudRain, Droplets, Sun, Thermometer } from 'lucide-react-native';
+import { CloudRain, Droplets, Square, Sun, Thermometer } from 'lucide-react-native';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { useTheme } from '@/design';
 import { formatPct, formatTemp, moistureState, pumpReasonText, relativeTime } from '@/lib/format';
 import { usePrefs } from '@/lib/prefs';
-import { Badge, Card, Gauge, Text } from '@/ui';
+import { useNow } from '@/lib/useNow';
+import { Badge, Button, Card, Gauge, Text, Toggle } from '@/ui';
 import { pumpState } from './hooks';
+import { useDeviceMutations } from './mutations';
+import { allowedDurations, derivePumpUi, type PendingCommand } from './pumpUi';
 
 export function DeviceStatusBadge({ device, now }: { device: DevicePublic; now: number }) {
   const t = useTheme();
@@ -42,11 +46,6 @@ export function DeviceCard({ device, now, onPress }: { device: DevicePublic; now
           </Text>
           <DeviceStatusBadge device={device} now={now} />
         </View>
-        <Badge
-          label={device.desired.mode === 'auto' ? 'Auto' : 'Manual'}
-          color={device.desired.mode === 'auto' ? t.colors.accent : t.colors.sun}
-          background={device.desired.mode === 'auto' ? t.colors.accentSoft : t.colors.sunSoft}
-        />
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.lg, marginVertical: t.space.lg }}>
@@ -75,7 +74,79 @@ export function DeviceCard({ device, now, onPress }: { device: DevicePublic; now
           label="Rain"
         />
       </View>
+
+      <QuickActions device={device} />
     </Card>
+  );
+}
+
+/** The two things people do every day, right on the card: water now, and auto on/off. */
+function QuickActions({ device }: { device: DevicePublic }) {
+  const t = useTheme();
+  const { pump, setMode } = useDeviceMutations(device.id);
+  const [pending, setPending] = useState<PendingCommand | null>(null);
+  const now = useNow(1000);
+  const ui = derivePumpUi(device, pending, now);
+  const running = ui.state === 'running' || ui.state === 'stopping';
+  const busy = ui.state === 'starting' || ui.state === 'stopping' || pump.isPending;
+  const auto = device.desired.mode === 'auto';
+  const durations = allowedDurations(device.desired.settings.maxPumpRunSec);
+  const duration = durations[1] ?? durations[0]!;
+
+  const water = () => {
+    if (busy || !device.online) return;
+    const action = running ? 'OFF' : 'ON';
+    pump.mutate(action === 'ON' ? { action, durationSec: duration } : { action }, {
+      onSuccess: (r) => setPending({ action, version: r.device.desired.version, since: Date.now() }),
+    });
+  };
+
+  const title = !device.online
+    ? 'Offline'
+    : ui.state === 'starting'
+      ? 'Starting…'
+      : ui.state === 'stopping'
+        ? 'Stopping…'
+        : running
+          ? 'Stop watering'
+          : 'Water now';
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space.md, marginTop: t.space.lg }}>
+      <Button
+        title={title}
+        icon={running ? Square : Droplets}
+        variant={running ? 'secondary' : 'primary'}
+        size="md"
+        onPress={water}
+        loading={pump.isPending}
+        disabled={!device.online}
+        style={{ flex: 1 }}
+        accessibilityHint={running ? 'Stops the pump' : `Waters for ${Math.round(duration / 60)} minutes`}
+        testID={`card-water-${device.id}`}
+      />
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: t.space.sm,
+          height: 44,
+          paddingHorizontal: t.space.md,
+          borderRadius: t.radius.pill,
+          backgroundColor: t.colors.surfaceAlt,
+        }}
+      >
+        <Text variant="label" tone={auto ? 'accent' : 'textSecondary'}>
+          Auto
+        </Text>
+        <Toggle
+          value={auto}
+          onChange={(v) => setMode.mutate(v ? 'auto' : 'manual')}
+          accessibilityLabel="Automatic watering"
+          testID={`card-auto-${device.id}`}
+        />
+      </View>
+    </View>
   );
 }
 

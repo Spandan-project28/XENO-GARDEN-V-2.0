@@ -1,5 +1,6 @@
 import {
   defaultSettings,
+  nextDefaultDeviceName,
   type ClaimBody,
   type ClaimResponse,
   type DesiredState,
@@ -37,7 +38,11 @@ export function toDevicePublic(d: DeviceDoc): DevicePublic {
   };
 }
 
-const defaultName = (hardwareId: string) => `Garden ${hardwareId.slice(-4).toUpperCase()}`;
+/** "Xeno 1", "Xeno 2", …: the lowest number not used by this owner's other devices. */
+async function defaultName(ownerId: string): Promise<string> {
+  const names = await Device.find({ ownerId }, { name: 1 }).lean<{ name: string }[]>();
+  return nextDefaultDeviceName(names.map((d) => d.name));
+}
 
 export interface DeviceServiceDeps {
   env: Env;
@@ -73,7 +78,7 @@ export function createDeviceService({ env, bus, now }: DeviceServiceDeps) {
         const created = await Device.create({
           hardwareId: body.hardwareId,
           ownerId: userId,
-          name: body.name ?? defaultName(body.hardwareId),
+          name: body.name ?? (await defaultName(userId)),
           claimCodeHash: codeHash,
           claimedAt: t,
           mqttPasswordHash: sha256(mqttPassword),
@@ -108,7 +113,7 @@ export function createDeviceService({ env, bus, now }: DeviceServiceDeps) {
               claimCodeHash: codeHash,
               claimedAt: t,
               mqttPasswordHash: sha256(mqttPassword),
-              ...(sameOwner ? {} : { name: body.name ?? defaultName(body.hardwareId), plantId: null }),
+              ...(sameOwner ? {} : { name: body.name ?? (await defaultName(userId)), plantId: null }),
               ...(body.name && sameOwner ? { name: body.name } : {}),
             },
           },

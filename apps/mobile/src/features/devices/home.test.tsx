@@ -13,7 +13,7 @@ jest.mock('@/lib/api', () => {
 
 beforeEach(() => {
   mockList.mockReset();
-  useSession.setState({ status: 'signedIn', accessToken: 'x', user: { id: 'u', email: 'a@b.co', name: 'Ann Smith', createdAt: '' } });
+  useSession.setState({ status: 'signedIn', accessToken: 'x', user: { id: 'u', email: 'a@b.co', name: 'Ann Smith', guest: false, createdAt: '' } });
 });
 
 describe('HomeScreen', () => {

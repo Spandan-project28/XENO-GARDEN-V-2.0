@@ -7,6 +7,7 @@ import {
   refreshBody,
   registerBody,
   updateMeBody,
+  upgradeBody,
   userPublic,
 } from '@xeno/shared';
 
@@ -22,6 +23,25 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
       schema: { tags: ['auth'], body: registerBody, response: { 201: authResponse } },
     },
     async (req, reply) => reply.code(201).send(await auth.register(req.body)),
+  );
+
+  app.post(
+    '/auth/guest',
+    {
+      config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+      schema: { tags: ['auth'], response: { 201: authResponse } },
+    },
+    async (_req, reply) => reply.code(201).send(await auth.guest()),
+  );
+
+  app.post(
+    '/auth/upgrade',
+    {
+      onRequest: app.authenticate,
+      config: strict,
+      schema: { tags: ['auth'], security: [{ bearer: [] }], body: upgradeBody, response: { 200: userPublic } },
+    },
+    async (req) => auth.upgrade(req.userId, req.body),
   );
 
   app.post(

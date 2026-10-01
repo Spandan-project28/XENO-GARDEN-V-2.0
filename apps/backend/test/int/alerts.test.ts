@@ -155,7 +155,7 @@ describe('alert routes', () => {
     await seedAlerts(7);
     const p1 = (await t.app.inject({ method: 'GET', url: '/v1/alerts?limit=3', headers })).json();
     expect(p1.items.map((a: { message: string }) => a.message)).toEqual(['a6', 'a5', 'a4']);
-    expect(p1.items[0].deviceName).toMatch(/^Garden /);
+    expect(p1.items[0].deviceName).toMatch(/^Xeno [0-9]+$/);
     const p2 = (await t.app.inject({ method: 'GET', url: `/v1/alerts?limit=3&cursor=${p1.nextCursor}`, headers })).json();
     expect(p2.items.map((a: { message: string }) => a.message)).toEqual(['a3', 'a2', 'a1']);
     const p3 = (await t.app.inject({ method: 'GET', url: `/v1/alerts?limit=3&cursor=${p2.nextCursor}`, headers })).json();

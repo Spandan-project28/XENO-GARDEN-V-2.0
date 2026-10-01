@@ -21,13 +21,20 @@ export type RegisterBody = z.infer<typeof registerBody>;
 export const loginBody = z.object({ email, password: z.string().min(1).max(128) });
 export type LoginBody = z.infer<typeof loginBody>;
 
+/** Attach an email + password to the current guest account; keeps its devices. */
+export const upgradeBody = registerBody;
+export type UpgradeBody = RegisterBody;
+
 export const refreshBody = z.object({ refreshToken: z.string().min(20).max(512) });
 export type RefreshBody = z.infer<typeof refreshBody>;
 
 export const userPublic = z.object({
   id: objectId,
-  email: z.string(),
+  /** Null for guest accounts (created silently on first launch, §15). */
+  email: z.string().nullable(),
   name: z.string(),
+  /** True until the user attaches an email ("Save your garden"). */
+  guest: z.boolean(),
   createdAt: isoDate,
 });
 export type UserPublic = z.infer<typeof userPublic>;

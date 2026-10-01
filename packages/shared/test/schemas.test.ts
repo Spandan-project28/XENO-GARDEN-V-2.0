@@ -156,3 +156,27 @@ describe('mqtt topics', () => {
     expect(wildcardFor('telemetry')).toBe('xg/v1/+/telemetry');
   });
 });
+
+describe('simple mode contracts (v2.1)', () => {
+  it('names devices Xeno 1, Xeno 2… using the lowest free number', async () => {
+    const { nextDefaultDeviceName } = await import('../src/constants/index.js');
+    expect(nextDefaultDeviceName([])).toBe('Xeno 1');
+    expect(nextDefaultDeviceName(['Xeno 1', 'Xeno 2'])).toBe('Xeno 3');
+    expect(nextDefaultDeviceName(['Xeno 2', 'Tomatoes', 'xeno 3'])).toBe('Xeno 1');
+    expect(nextDefaultDeviceName(['Xeno 1', 'Xeno 3'])).toBe('Xeno 2');
+    expect(nextDefaultDeviceName(['Xeno 1x', 'My Xeno 1'])).toBe('Xeno 1');
+  });
+
+  it('accepts guest users (no email)', async () => {
+    const { userPublic } = await import('../src/schemas/auth.js');
+    const u = { id: '65f0c0ffee0000000000abcd', email: null, name: 'My garden', guest: true, createdAt: new Date().toISOString() };
+    expect(userPublic.parse(u).guest).toBe(true);
+  });
+
+  it('BLE info defaults to setup mode and allows an empty claim code in rejoin mode', async () => {
+    const { bleInfoPayload } = await import('../src/ble/index.js');
+    expect(bleInfoPayload.parse({ proto: 1, hwId: 'xg-aabbccddeeff', fw: '2.0.0', claimCode: 'ABCDEFGH' }).mode).toBe('setup');
+    const r = bleInfoPayload.parse({ proto: 1, hwId: 'xg-aabbccddeeff', fw: '2.1.0', mode: 'rejoin' });
+    expect(r).toMatchObject({ mode: 'rejoin', claimCode: '' });
+  });
+});

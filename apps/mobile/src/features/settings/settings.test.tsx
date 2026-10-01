@@ -23,7 +23,7 @@ beforeEach(() => {
   mockGetPrefs.mockResolvedValue({ enabled: true, types: {} });
   mockSetPrefs.mockImplementation(async (p) => p);
   mockLogout.mockResolvedValue({ ok: true });
-  useSession.setState({ status: 'signedIn', accessToken: 'a', user: { id: 'u', email: 'ann@example.com', name: 'Ann Smith', createdAt: '' } });
+  useSession.setState({ status: 'signedIn', accessToken: 'a', user: { id: 'u', email: 'ann@example.com', name: 'Ann Smith', guest: false, createdAt: '' } });
   usePrefs.setState({ theme: 'system', units: 'c' });
 });
 

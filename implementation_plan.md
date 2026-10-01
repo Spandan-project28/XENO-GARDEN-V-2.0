@@ -2,6 +2,7 @@
 
 > **This is the single source of truth for the rebuild.** Every loop iteration starts by reading this file,
 > picks the next unchecked task, completes it, verifies it, checks it off, and logs it.
+> **v2.1:** §15 Simple Mode and Phase 10 take priority where they conflict with earlier sections.
 > Background on v1 (what it did and what went wrong) lives in `claude_context.md`. Read it once per session; do not copy its bugs.
 
 ---
@@ -35,7 +36,7 @@ Each iteration does **exactly one task** (one `- [ ]` line in §12) unless the t
 A real consumer-grade smart irrigation product:
 
 - **Zero network configuration by the user.** No IP addresses, ever. The phone app works on any internet connection (home WiFi, college WiFi, 4G/5G). The device joins WiFi through **in-app Bluetooth pairing**, remembers several networks, and switches between them automatically.
-- **Setup in about 60 seconds.** Open the app → sign up → "Add device" → the app finds the ESP32 over BLE → pick a WiFi network and enter its password → the device appears live on the dashboard.
+- **Setup in about 60 seconds** (v2.1 Simple Mode, §15, removes the sign-up step and finds devices automatically). Originally: open the app → sign up → "Add device" → the app finds the ESP32 over BLE → pick a WiFi network and enter its password → the device appears live on the dashboard.
 - **Safe by default.** The device runs its automation locally, so it keeps working when the internet or server is down. It has a hard maximum pump runtime and rain lockout. When it loses connection, the pump fails safe to OFF.
 - **Stunning, modern UI.** Light and dark themes, smooth animations, live updates with no manual refresh, and charts over real time ranges.
 - **Built to change.**
@@ -501,6 +502,65 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 - [~] BLOCKED (needs deployed backend + phone + device) P9.6 🧑 HUMAN: deploy, run `eas build --profile production`, install, onboard the real device, and confirm it works on **home WiFi, a different WiFi, and mobile data** (this is the acceptance test for the core promise).
 - [x] P9.7 README: quick start (dev with the simulator), architecture overview, and links to all docs.
 
+### Phase 10 — Simple mode (v2.1: "open the app and it just works")
+> Spec: §15. Keep the existing colour palette, typography and design tokens exactly as they are (the user approved them). Simplify *flows*, not the look.
+- [x] P10.1 Shared contracts:
+  - `POST /auth/guest` schemas; `userPublic.email` becomes nullable and gains `guest: boolean`; `upgradeBody` (email + password + name) for `POST /auth/upgrade`.
+  - BLE `info` gains `mode: 'setup' | 'rejoin'`, and `claimCode` may be empty in rejoin mode (proto stays 1, with backward-compatible defaults).
+  - `deviceNamePrefix` becomes `Xeno-`, plus a `defaultDeviceName(n)` helper → `Xeno 1`, `Xeno 2`, …
+  - Tests.
+- [x] P10.2 Backend guest accounts:
+  - `POST /auth/guest` creates an account with no email or password and returns tokens. Rate limit: 5/min/IP.
+  - `POST /auth/upgrade` attaches an email and password to the current guest account, keeping its devices.
+  - The User model allows `email: null` (sparse unique index), and guests can't use `/auth/login`.
+  - Claim assigns the default name `Xeno N`: the lowest free number among the owner's devices.
+  - Integration tests; API.md + SECURITY.md updated.
+- [ ] P10.3 Mobile invisible session:
+  - On first launch with no stored session, the app creates a guest session silently and opens straight to Home. No welcome or sign-in screens in the default path.
+  - If the phone is offline on first launch, show a friendly retry screen in the same design language.
+  - Settings → Account: "Save your garden" (upgrade to email) and "Sign in with email" (for a second phone). Sign-out of a guest account warns that its devices will be lost from this phone.
+  - Tests.
+- [ ] P10.4 Mobile WiFi memory:
+  - `wifiVault` keeps SSID → password in SecureStore, never in AsyncStorage or logs.
+  - `currentPhoneWifi()` reads the phone's SSID via NetInfo (Android: location permission requested with a clear explanation; null on mobile data, iOS or no permission).
+  - Tests.
+- [ ] P10.5 Mobile auto-setup engine (`features/setup/autoSetup.ts`, a pure state machine like `flow.ts`, tested with the mock transport):
+  - **Discover:** scan for `Xeno-*` devices and name them `Xeno 1…n` in discovery order (the backend's default name wins after claim).
+  - **Choose WiFi:** phone's current SSID if the device can see it → else the strongest network the device sees that's in the vault → else ask once (SSID prefilled; a picker of the networks the device sees). A password typed once is saved and reused for every other device.
+  - **Each device, in sequence:**
+    - setup mode: connect → info → claim → cloud creds → wifi creds → wait for `online` → confirm via API.
+    - rejoin mode (already mine): connect → wifi creds → online.
+  - **Failures:** a wrong saved password clears that vault entry and asks again once; other failures are per-device with "Retry", never blocking the other devices.
+  - Tests cover 2 devices with zero prompts, the first-time prompt, a wrong password, a rejoin device, and a device that isn't mine in rejoin mode (skipped with a message).
+- [ ] P10.6 Mobile auto-setup UI:
+  - Home auto-discovers nearby devices (when Bluetooth permission is already granted, or after one tap on "Find my devices") and shows a "2 Xeno devices nearby → Connect" card.
+  - Connect opens a single sheet: one row per device with live step text and a progress ring, the one-time WiFi password field if needed, then a success state.
+  - The empty Home state is a single big "Find my devices" action.
+  - The old wizard stays reachable as "Set up manually".
+  - Same tokens and colours. Component tests.
+- [ ] P10.7 Simpler everyday screens:
+  - Home cards show moisture ring, status in plain words ("Soil is fine", "Watering…", "Needs water"), and one-tap **Water now** + **Auto** switch directly on the card.
+  - Device detail keeps power features but leads with the same controls.
+  - Plain-language copy everywhere; no jargon (RSSI → "Signal: Good").
+  - Tests updated.
+- [ ] P10.8 Firmware simple-mode support:
+  - BLE name `Xeno-XXXX`; `info.mode`.
+  - **Rejoin mode:** when the device has saved networks but has been unable to join any of them for 2 min, it advertises in rejoin mode until it's online again. In rejoin mode it doesn't expose the claim code and rejects `cloud_creds`, accepting only `wifi_creds`. A stranger nearby can't take the device; the owner's app can give it new WiFi.
+  - The pure policy lives in `xg_core` (`xg_pairing`) with native tests. ESP32 build passes.
+- [ ] P10.9 Demo parity: the mock BLE transport offers 2 simulated `Xeno-DEMO…` devices (plus a rejoin case) so the whole auto-setup can be exercised in Expo Go and in tests without hardware. Tests.
+- [ ] P10.10 Local Android app build without an Expo account:
+  - `tools/android/setup.ps1` downloads a portable JDK 17 and the Android SDK (cmdline-tools, platform, build-tools, NDK as required) into `%LOCALAPPDATA%\xeno-android` (outside the repo).
+  - Adds `expo-dev-client`; `npm run android:apk` does `expo prebuild` + `gradlew assembleDebug` and copies the APK to `dist/xeno-garden-dev.apk`.
+  - Verify the APK is produced. Document installing it (USB/adb or copying the file).
+  - Generated `android/` stays git-ignored (CNG).
+- [ ] P10.11 One-command cloud deploy:
+  - `npm run deploy:cloud` (`tools/deploy.mjs`): checks `fly` login; creates app and volume if missing; generates JWT and metrics secrets; asks only for the MongoDB connection string; deploys; prints the URL and the exact `EXPO_PUBLIC_API_URL` / firmware CA steps.
+  - Dry-run mode is tested.
+  - DEPLOY.md updated.
+- [ ] P10.12 Docs + full verification:
+  - README "How to use (simple)", the §15 flows reflected in ARCHITECTURE.md, HARDWARE.md (rejoin LED), API.md, BLE docs.
+  - Run every §11 command with no caches, and update PROGRESS.md.
+
 ### Definition of Done (whole project)
 - A new user can install the app, sign up, add a device over BLE and see live data **without typing any IP address or editing any source file**.
 - The phone app works on any internet connection. The device reconnects on its own after WiFi or router changes, and roams between saved networks.
@@ -542,3 +602,39 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
 | P9.6 | Production build + real-world multi-network test | Physical device and networks |
 
 Until those are done, everything is developed and verified against local Docker services, in-memory test infrastructure and the **simulator**. So nearly the whole project can be built and tested autonomously.
+
+---
+
+## 15. Simple Mode (v2.1) — the default experience
+
+**Why:** the user's feedback was "real app ≠ complex app". The farmer or home gardener should never see accounts, IPs, broker settings or wizards with many steps. Everything powerful stays, but behind the scenes or one level deeper. **The colour palette, fonts and design tokens are approved and must not change.**
+
+### The whole experience
+1. **Install and open the app.** The phone can be on any internet: home WiFi, another WiFi or mobile data. A guest session is created silently; there's no sign-up. The app opens on **Garden**.
+2. **Power on the ESP32s.** A new device starts in setup mode and advertises `Xeno-XXXX`.
+3. **The app finds them.** "2 Xeno devices nearby → Connect". Android asks for Bluetooth/location permission the first time only, which the OS requires.
+4. **Tap Connect.** For each device the app:
+   1. claims it to this phone's account;
+   2. gives it the cloud address and its own credentials;
+   3. gives it WiFi credentials.
+
+   The WiFi is the phone's current WiFi if the device can see it. Otherwise it's a network the app already knows, or else the user types the password **once**, with the network name already filled in. That password is remembered for every later device.
+5. **Done.** The devices appear as **Xeno 1** and **Xeno 2** with live readings. Watering is automatic by default. "Water now" is one tap.
+6. **Later, WiFi changes** (new router or password): the device can't join any saved network for 2 minutes, so it enters **rejoin mode** by itself. Next time the owner opens the app nearby, it shows "Xeno 1 needs WiFi → Fix" and fixes it with one tap, using a remembered password, or one prompt.
+
+### Honest limits (state them in the UI copy, never hide them)
+- **A WiFi password has to be entered once per network.** Neither Android nor iOS lets apps read saved WiFi passwords. After that, it's remembered.
+- **Bluetooth setup needs the installed app** (P10.10 APK or an EAS build). Expo Go has no Bluetooth module, so in Expo Go the same flow runs with simulated devices (P10.9).
+- **"Works on any internet" needs the server deployed to the cloud** (P10.11 + P9.4: accounts the human must create). Until then, phone, PC and devices must share a network.
+
+### Security model in simple mode
+- **Guest account:** a random account stored only in this phone's keychain, with the same JWT + refresh-rotation as before. Losing the phone means losing access, unless the user taps "Save your garden" (upgrade to email).
+- **Claiming still requires the device's claim code,** which is only readable over the encrypted BLE link in setup mode. That's proof of physical possession, so a nearby stranger can't take a device that's already set up.
+- **Rejoin mode** hides the claim code and refuses cloud credentials. The only thing someone nearby could do is point the device at a different WiFi, which takes it offline but can't take control of it. Automation keeps running offline, and the owner fixes it with one tap.
+- **Saved WiFi passwords** live in SecureStore only (Keychain/Keystore), never in logs, the query cache or analytics.
+
+### ADRs
+- ADR-016: **Guest-first accounts.** Accounts exist for security and multi-phone sharing, not as a user-facing step. Upgrading to email is optional.
+- ADR-017: **Auto-setup with a phone-side WiFi vault.** This is the closest thing to "connects to whatever internet I'm on" that the OS allows.
+- ADR-018: **Device-initiated rejoin mode without a claim code.** It self-heals WiFi changes without reflashing and without opening a takeover path.
+- ADR-019: **Local Gradle build of an Expo dev-client APK** (no EAS account needed for testing). The JS still comes from Metro, so no server address is baked in. Production builds still go through EAS with `EXPO_PUBLIC_API_URL`.

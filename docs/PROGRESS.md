@@ -257,3 +257,14 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 - Fresh run with no caches: turbo build/typecheck/lint/test **15/15**; backend integration **96**, e2e **7/7** (unit+int+e2e = 132); mobile **22 suites / 110 tests**, typecheck and lint clean, expo-doctor **21/21** (fixed an `@types/jest` SDK mismatch found in this pass), Android export 7.7 MB; shared **62**; simulator **11**; ML pytest **5/5**; firmware native **218/218** checks, ESP32 build SUCCESS; `npm ls --all` clean; `npm audit` shows only the documented accepted advisory.
 - `npm run dev` smoke test: this PC's LAN address had changed since the first run (10.107.24.48 → 192.168.0.103) and the stack adapted automatically. The simulated device connected, applied its config and streamed data; health db+mqtt OK.
 - **Remaining human steps** (§14): P6.15 Expo account + dev build on a phone; P7.11 flash and calibrate the real board; P9.4 cloud accounts (Atlas + Fly) and secrets; P9.6 real-world multi-network acceptance test. Step-by-step instructions are in docs/DEPLOY.md and docs/HARDWARE.md.
+
+## 2026-10-01 — v2.1 Simple Mode planned (Phase 10, §15)
+- The user wants it simpler: no sign-up, devices found automatically as Xeno 1/Xeno 2, WiFi handled automatically, colours unchanged. Plan updated with §15 (experience, honest limits, security model, ADR-016…019) and Phase 10 tasks P10.1–P10.12.
+- Hotfix before this (commit aadc4e3): expo-notifications is lazy-loaded so the app no longer crashes in Expo Go on Android.
+
+## 2026-10-01 — P10.1 + P10.2 Shared contracts and backend guest accounts
+- *Changed:*
+  - Shared: `userPublic.email` is nullable and has a `guest` flag; `upgradeBody`; BLE `info.mode` (`setup|rejoin`, default `setup`) with an optional claim code; BLE name prefix `Xeno-`; `nextDefaultDeviceName()`.
+  - Backend: `POST /auth/guest` (5/min/IP) and `POST /auth/upgrade`; User email/password are optional with a partial unique index on email; login ignores password-less accounts; claim names devices `Xeno N` (lowest free number per owner).
+  - Docs: API.md, SECURITY.md.
+- *Verified:* shared 65; backend integration 102 (guest session, many guests, upgrade keeps the id and works once, email clash 409, needs auth, default naming incl. reuse and per-owner numbering), unit 29, e2e 7; mobile typecheck + 111 tests.

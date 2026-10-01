@@ -14,12 +14,23 @@ export const BLE_PROTOCOL_VERSION = 1;
 /** Conservative chunk size that fits a 185-byte MTU (iOS default) with ATT + frame header. */
 export const BLE_CHUNK_BYTES = 160;
 
+/**
+ * Why the device is advertising:
+ *  - `setup`:  new or reset device; exposes its claim code so it can be claimed.
+ *  - `rejoin`: already set up but can't join any saved WiFi; accepts new WiFi only
+ *              (no claim code, cloud credentials refused). See implementation_plan §15.
+ */
+export const BLE_MODES = ['setup', 'rejoin'] as const;
+export type BleMode = (typeof BLE_MODES)[number];
+
 /** `info` characteristic (read). */
 export const bleInfoPayload = z.object({
   proto: z.number().int(),
   hwId: z.string(),
   fw: z.string(),
-  claimCode: z.string(),
+  /** Empty in rejoin mode. */
+  claimCode: z.string().default(''),
+  mode: z.enum(BLE_MODES).default('setup'),
 });
 export type BleInfoPayload = z.infer<typeof bleInfoPayload>;
 

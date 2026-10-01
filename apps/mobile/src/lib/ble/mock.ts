@@ -86,7 +86,7 @@ export class MockSession implements ProvisioningSession {
 
 export class MockTransport implements ProvisioningTransport {
   constructor(
-    private readonly info: BleInfoPayload = { proto: 1, hwId: 'xg-de0000000001', fw: '2.0.0-sim', claimCode: 'DEMO2345' },
+    private readonly info: BleInfoPayload = { proto: 1, hwId: 'xg-de0000000001', fw: '2.0.0-sim', claimCode: 'DEMO2345', mode: 'setup' },
     private readonly stepMs = 600,
   ) {}
   lastSession: MockSession | null = null;

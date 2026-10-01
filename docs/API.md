@@ -7,9 +7,10 @@ Errors always look like `{"error": {"code": "…", "message": "…", "details"?:
 
 | Area | Endpoints |
 |---|---|
-| Auth *(public)* | `POST /auth/register` · `POST /auth/login` · `POST /auth/refresh` (rotating) · `POST /auth/logout` |
+| Auth *(public)* | `POST /auth/guest` (silent first-launch account, 5/min/IP) · `POST /auth/register` · `POST /auth/login` · `POST /auth/refresh` (rotating) · `POST /auth/logout` |
+| Auth *(bearer)* | `POST /auth/upgrade` `{email, password, name}`: turns the current guest into an email account, keeping its devices |
 | Me | `GET/PATCH /me` · `POST/DELETE /me/push-tokens` · `GET/PUT /me/notification-prefs` |
-| Devices | `POST /devices/claim` → `{device, mqtt}` · `GET /devices` · `GET/PATCH/DELETE /devices/:id` |
+| Devices | `POST /devices/claim` → `{device, mqtt}` (default name: the lowest free `Xeno N`) · `GET /devices` · `GET/PATCH/DELETE /devices/:id` |
 | Control | `PUT /devices/:id/settings` (partial) · `PUT /devices/:id/mode` · `POST /devices/:id/pump` `{action, durationSec?}` · `POST /devices/:id/commands` `{type}` |
 | History | `GET /devices/:id/readings?from&to&resolution=auto\|raw\|5m\|1h\|1d&tz` · `GET /devices/:id/pump-events?from&to` |
 | Alerts | `GET /alerts?status=open,acknowledged&deviceId&cursor&limit` · `GET /alerts/counts` · `POST /alerts/:id/ack` · `POST /alerts/:id/resolve` |

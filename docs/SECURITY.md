@@ -13,6 +13,7 @@
 ## Controls by layer
 
 ### Accounts & API (`apps/backend`)
+- **Guest accounts** (simple mode, ADR-016): the app creates one silently on first launch. It has no email or password; the only credential is the rotating refresh token in the phone's keychain. Rate-limited to 5/min per IP. Guests can't log in by email until they upgrade (`/auth/upgrade`), and losing the phone without upgrading means losing access. Devices can then be re-claimed with physical access.
 - Passwords hashed with **argon2** (`@node-rs/argon2`). The unknown-email path runs a dummy hash so timing doesn't reveal which emails exist.
 - **Lockout** for 15 min after 5 failed logins. Rate limits: auth 10/min, claim 20/min, pump 30/min, global 300/min per IP.
 - **Access tokens:** 15-minute HS256 JWTs. The secret must be ≥ 32 characters, and a placeholder secret is rejected in production.

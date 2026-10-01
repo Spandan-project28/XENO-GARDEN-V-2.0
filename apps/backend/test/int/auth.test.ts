@@ -117,3 +117,50 @@ describe('auth', () => {
     expect((await post('/v1/auth/refresh', { refreshToken: u.refreshToken })).statusCode).toBe(401);
   });
 });
+
+describe('guest accounts (simple mode)', () => {
+  it('creates a guest session with no email, usable like any other', async () => {
+    const res = await post('/v1/auth/guest', {});
+    expect(res.statusCode).toBe(201);
+    const g = res.json();
+    expect(g.user).toMatchObject({ email: null, guest: true, name: 'My garden' });
+    const me = await t.app.inject({ method: 'GET', url: '/v1/me', headers: { authorization: `Bearer ${g.accessToken}` } });
+    expect(me.json()).toMatchObject({ id: g.user.id, guest: true });
+    // Rotation works the same as for email accounts.
+    expect((await post('/v1/auth/refresh', { refreshToken: g.refreshToken })).statusCode).toBe(200);
+  });
+
+  it('allows many guests (no unique clash on a missing email)', async () => {
+    for (let i = 0; i < 3; i++) expect((await post('/v1/auth/guest', {})).statusCode).toBe(201);
+    expect(await User.countDocuments({ guest: true })).toBe(3);
+  });
+
+  it('upgrades a guest to an email account, keeping the same user', async () => {
+    const g = (await post('/v1/auth/guest', {})).json();
+    const auth = { authorization: `Bearer ${g.accessToken}` };
+    const up = await post('/v1/auth/upgrade', { email: 'Save@Example.com', password: 'garden-pass-1', name: 'Asha' }, auth);
+    expect(up.statusCode).toBe(200);
+    expect(up.json()).toMatchObject({ id: g.user.id, email: 'save@example.com', name: 'Asha', guest: false });
+    const login = await post('/v1/auth/login', { email: 'save@example.com', password: 'garden-pass-1' });
+    expect(login.statusCode).toBe(200);
+    expect(login.json().user.id).toBe(g.user.id);
+    // Only once.
+    const again = await post('/v1/auth/upgrade', { email: 'other@example.com', password: 'garden-pass-1', name: 'A' }, auth);
+    expect(again.statusCode).toBe(409);
+  });
+
+  it('refuses to upgrade onto an email that is already used', async () => {
+    await t.signUp('taken@example.com');
+    const g = (await post('/v1/auth/guest', {})).json();
+    const res = await post(
+      '/v1/auth/upgrade',
+      { email: 'taken@example.com', password: 'garden-pass-1', name: 'A' },
+      { authorization: `Bearer ${g.accessToken}` },
+    );
+    expect(res.statusCode).toBe(409);
+  });
+
+  it('requires a session to upgrade', async () => {
+    expect((await post('/v1/auth/upgrade', { email: 'x@example.com', password: 'garden-pass-1', name: 'A' })).statusCode).toBe(401);
+  });
+});

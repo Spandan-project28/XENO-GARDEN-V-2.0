@@ -29,7 +29,7 @@ describe('devices', () => {
     const body = res.json();
     expect(body.device).toMatchObject({
       hardwareId: HW,
-      name: 'Garden AB34',
+      name: 'Xeno 1',
       online: false,
       syncPending: true,
       desired: { version: 1, mode: 'auto', settings: DEFAULT_SETTINGS, manual: null },
@@ -73,7 +73,7 @@ describe('devices', () => {
     const res = await claim(other.headers, { hardwareId: HW, claimCode: CODE });
     off();
     expect(res.statusCode).toBe(201);
-    expect(res.json().device.name).toBe('Garden AB34');
+    expect(res.json().device.name).toBe('Xeno 1');
     expect(removed).toEqual([owner.userId]);
     const list = await t.app.inject({ method: 'GET', url: '/v1/devices', headers: owner.headers });
     expect(list.json().items).toHaveLength(0);
@@ -140,5 +140,22 @@ describe('devices', () => {
 
   it('requires auth', async () => {
     expect((await t.app.inject({ method: 'GET', url: '/v1/devices' })).statusCode).toBe(401);
+  });
+});
+
+describe('default device names', () => {
+  it('names devices Xeno 1, Xeno 2… and reuses the lowest free number', async () => {
+    const u = await t.signUp();
+    const hw = (n: number) => `xg-3c71bf12ab${String(n).padStart(2, '0')}`;
+    const a = (await claim(u.headers, { hardwareId: hw(1), claimCode: CODE })).json().device;
+    const b = (await claim(u.headers, { hardwareId: hw(2), claimCode: CODE })).json().device;
+    expect([a.name, b.name]).toEqual(['Xeno 1', 'Xeno 2']);
+    await t.app.inject({ method: 'DELETE', url: `/v1/devices/${a.id}`, headers: u.headers });
+    const c = (await claim(u.headers, { hardwareId: hw(3), claimCode: CODE })).json().device;
+    expect(c.name).toBe('Xeno 1');
+    // Numbering is per owner.
+    const other = await t.signUp();
+    const d = (await claim(other.headers, { hardwareId: hw(4), claimCode: CODE })).json().device;
+    expect(d.name).toBe('Xeno 1');
   });
 });

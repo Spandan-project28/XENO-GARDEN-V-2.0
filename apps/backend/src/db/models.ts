@@ -26,9 +26,12 @@ export interface PushTokenDoc {
 }
 export interface UserDoc {
   _id: Types.ObjectId;
-  email: string;
-  passwordHash: string;
+  /** Null for guest accounts (ADR-016). */
+  email: string | null;
+  /** Null for guest accounts: they authenticate only with their refresh token. */
+  passwordHash: string | null;
   name: string;
+  guest: boolean;
   pushTokens: PushTokenDoc[];
   notificationPrefs: { enabled: boolean; types: Record<string, boolean> };
   failedLogins: number;
@@ -38,9 +41,10 @@ export interface UserDoc {
 }
 const userSchema = new Schema<UserDoc>(
   {
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    passwordHash: { type: String, required: true },
+    email: { type: String, default: null, lowercase: true, trim: true },
+    passwordHash: { type: String, default: null },
     name: { type: String, required: true, trim: true },
+    guest: { type: Boolean, default: false },
     pushTokens: {
       type: [
         new Schema<PushTokenDoc>(
@@ -62,6 +66,11 @@ const userSchema = new Schema<UserDoc>(
     lockedUntil: { type: Date, default: null },
   },
   { timestamps: true },
+);
+// Unique among accounts that have an email; any number of guests (email: null).
+userSchema.index(
+  { email: 1 },
+  { unique: true, name: 'email_unique', partialFilterExpression: { email: { $type: 'string' } } },
 );
 userSchema.index({ 'pushTokens.token': 1 });
 export const User = model<UserDoc>('User', userSchema);

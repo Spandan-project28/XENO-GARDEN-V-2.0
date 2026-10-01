@@ -13,7 +13,8 @@ export const CLAIM_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 export const CLAIM_CODE_PATTERN = /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{8}$/;
 
 export const BLE = {
-  deviceNamePrefix: 'XenoGarden-',
+  /** Advertised name: prefix + last 4 hex digits of the MAC, e.g. "Xeno-AB12". */
+  deviceNamePrefix: 'Xeno-',
   serviceUuid: '6b1f0001-5e6a-4c2b-9d3e-8a7c1b2f4e10',
   characteristics: {
     info: '6b1f0002-5e6a-4c2b-9d3e-8a7c1b2f4e10',
@@ -164,3 +165,20 @@ export const ERROR_CODES = [
   'INTERNAL',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
+
+/** Friendly default names for devices: "Xeno 1", "Xeno 2", … */
+export const DEVICE_NAME_BASE = 'Xeno';
+export const defaultDeviceName = (n: number) => `${DEVICE_NAME_BASE} ${n}`;
+
+/** The lowest "Xeno N" not already used by one of the owner's devices. */
+export function nextDefaultDeviceName(existing: readonly string[]): string {
+  const used = new Set<number>();
+  const re = /^xeno (\d+)$/i;
+  for (const name of existing) {
+    const m = re.exec(name.trim());
+    if (m) used.add(Number(m[1]));
+  }
+  let n = 1;
+  while (used.has(n)) n++;
+  return defaultDeviceName(n);
+}

@@ -520,7 +520,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - If the phone is offline on first launch, show a friendly retry screen in the same design language.
   - Settings → Account: "Save your garden" (upgrade to email) and "Sign in with email" (for a second phone). Sign-out of a guest account warns that its devices will be lost from this phone.
   - Tests.
-- [ ] P10.4 Mobile WiFi memory:
+- [x] P10.4 Mobile WiFi memory:
   - `wifiVault` keeps SSID → password in SecureStore, never in AsyncStorage or logs.
   - `currentPhoneWifi()` reads the phone's SSID via NetInfo (Android: location permission requested with a clear explanation; null on mobile data, iOS or no permission).
   - Tests.

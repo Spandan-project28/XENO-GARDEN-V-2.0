@@ -276,3 +276,10 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - The sign-up route is removed; the screen became "Save your garden" (`/save-garden`, upgrades the guest and keeps its devices).
   - Settings for guests: "Only on this phone", Save your garden, "Sign in with email" (with a warning), and a guest sign-out warning offering to save first.
 - *Verified:* mobile typecheck + lint clean, 24 suites / 120 tests (bootstrap: first launch → guest without a signedOut flash, restore, offline fallback, no double guest; welcome start/offline; save garden; guest settings).
+
+## 2026-10-01 — P10.4 Mobile WiFi memory
+- *Changed:* `lib/wifi.ts`:
+  - `wifiVault`: SecureStore JSON blob, newest 8 networks, tolerant of corrupt data, wiped on sign-out.
+  - `currentPhoneWifi({ask})`: Android SSID via NetInfo after the location permission, with a plain-language rationale; null on mobile data, iOS, hidden SSIDs or refusal.
+  - app.json declares ACCESS_FINE_LOCATION and ACCESS_WIFI_STATE.
+- *Verified:* 8 new tests (round trip, recency order, forget, never in AsyncStorage, cap, corrupt data, permission ask/no-ask, unknown SSID, cellular, iOS); full mobile suite green.

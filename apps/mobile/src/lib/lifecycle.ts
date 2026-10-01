@@ -2,6 +2,7 @@ import { useLiveTelemetry } from './liveTelemetry';
 import { queryClient, queryPersister } from './queryClient';
 import { realtime } from './realtime';
 import { onSignOut } from './session';
+import { wifiVault } from './wifi';
 
 let wired = false;
 
@@ -14,5 +15,6 @@ export function wireSignOutCleanup() {
     queryClient.clear();
     void queryPersister.removeClient();
     useLiveTelemetry.getState().clear();
+    void wifiVault.clear();
   });
 }

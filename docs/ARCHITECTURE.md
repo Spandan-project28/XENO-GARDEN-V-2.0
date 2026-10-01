@@ -38,6 +38,24 @@ User        App                      ESP32 (pairing mode)          Backend      
  │ ✓ Done    │                         │                             │                  │
 ```
 
+## Flow 1b — Simple mode (v2.1, the default experience; implementation_plan §15)
+
+```
+First launch:  app ── POST /auth/guest ──► backend      (silent; no sign-up screen)
+Garden screen: quiet BLE scan (only if no OS prompt is needed) → "2 new devices nearby → Connect"
+Connect:       for each device, one after another (features/setup/autoSetup.ts):
+                 info.mode == setup  → claim → cloud_creds → WiFi → online   (named "Xeno N")
+                 info.mode == rejoin → mine? → WiFi only → online           (no claim code exposed)
+WiFi choice:   network that worked for the previous device
+               → phone's own WiFi (if the device sees it and the password is in the keychain vault)
+               → any visible network in the vault
+               → ask once (password saved only after the device proves it works)
+Later:         device can't join any saved WiFi for 2 min → advertises in rejoin mode by itself
+               → app shows "Xeno 1 needs WiFi → Fix WiFi"
+```
+
+In Expo Go (no Bluetooth), two simulated devices stand in for the radio. On `npm run dev`, the simulator's virtual radio (`apps/simulator/src/bridge.ts`) receives their credentials and runs them as real MQTT devices.
+
 ## Flow 2 — Manual pump command
 
 ```

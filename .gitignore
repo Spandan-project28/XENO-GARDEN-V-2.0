@@ -15,8 +15,8 @@ firmware/.pio/
 .pio/
 .DS_Store
 *.tsbuildinfo
-android/
-ios/
+apps/mobile/android/
+apps/mobile/ios/
 __pycache__/
 .venv/
 uploads/

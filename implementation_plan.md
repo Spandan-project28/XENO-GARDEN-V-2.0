@@ -287,9 +287,9 @@ Errors always use this shape: `{error: {code, message, details?}}`. Lists use cu
 - Server → `telemetry`, `shadow` (reported/desired changes), `status` (online/offline), `alert`, `cmd_ack`.
 
 ### 7.4 BLE provisioning GATT (firmware ↔ app)
-- The device advertises the name `XenoGarden-XXXX` (last 4 hex digits of its MAC) and the service UUID `XG_PROV_SERVICE` (fixed, defined in `shared/constants` and `firmware/include`).
+- The device advertises the name `Xeno-XXXX` (last 4 hex digits of its MAC; v2.1) and the service UUID `XG_PROV_SERVICE` (fixed, defined in `shared/constants` and `firmware/include`).
 - Characteristics:
-  - `info` (read): `{hwId, fwVersion, claimCode}`.
+  - `info` (read): `{proto, hwId, fw, claimCode, mode}`. `mode` is `setup` or `rejoin`; in rejoin mode the claim code is empty and `cloud_creds` writes are refused (§15, ADR-018).
   - `wifi_scan` (write to trigger, notify results): list of `{ssid, rssi, secure}`.
   - `wifi_creds` (write): `{ssid, password}`, stored at the top of the NVS network list.
   - `cloud_creds` (write): `{host, port, tls, username, password}` taken from the claim response (ADR-009). A compiled-in default host is only a fallback.
@@ -548,7 +548,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - **Rejoin mode:** when the device has saved networks but has been unable to join any of them for 2 min, it advertises in rejoin mode until it's online again. In rejoin mode it doesn't expose the claim code and rejects `cloud_creds`, accepting only `wifi_creds`. A stranger nearby can't take the device; the owner's app can give it new WiFi.
   - The pure policy lives in `xg_core` (`xg_pairing`) with native tests. ESP32 build passes.
 - [x] P10.9 Demo parity: the mock BLE transport offers 2 simulated `Xeno-DEMO…` devices (plus a rejoin case) so the whole auto-setup can be exercised in Expo Go and in tests without hardware. Tests.
-- [ ] P10.10 Local Android app build without an Expo account:
+- [x] P10.10 Local Android app build without an Expo account:
   - `tools/android/setup.ps1` downloads a portable JDK 17 and the Android SDK (cmdline-tools, platform, build-tools, NDK as required) into `%LOCALAPPDATA%\xeno-android` (outside the repo).
   - Adds `expo-dev-client`; `npm run android:apk` does `expo prebuild` + `gradlew assembleDebug` and copies the APK to `dist/xeno-garden-dev.apk`.
   - Verify the APK is produced. Document installing it (USB/adb or copying the file).

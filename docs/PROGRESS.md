@@ -338,3 +338,15 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - prints the next steps. `--dry-run` shows the plan.
   - DEPLOY.md now starts with a three-command quickest path.
 - *Verified:* 7 `node --test` cases on the pure planner (fresh / re-run / host follows the app name / env URI skips the prompt / no secret values in the plan / invalid names / helpers), via `npm run test:tools`. The live CLI paths were checked for clear errors (no Fly CLI here; no app name).
+
+## 2026-10-01 — P10.10 Local Android app build (no Expo account)
+- *Changed:*
+  - `npm run android:setup` (`tools/android/setup.ps1`): a portable Temurin JDK 17 plus the Android SDK (platform 36, build-tools 36.0.0, NDK 27.1.12297006, CMake 3.22.1, platform-tools) in `%LOCALAPPDATA%\xeno-android`. Idempotent and verifies every part.
+  - `npm run android:apk` (`tools/android/build-apk.mjs`): `expo prebuild` (CNG; keeps our npm scripts), then `gradlew assembleDebug` (arm64 by default, `--all-abis` optional), then `dist/xeno-garden-dev.apk`. `--release --api https://<server>` builds the finished app with the public server address baked in.
+  - Added `expo-dev-client`; applied Expo's current patch versions (@expo/ui, expo, expo-router, expo-constants); expo-doctor 21/21.
+  - Fixed: the root `.gitignore` rule `android/` also hid `tools/android/`; it's now `apps/mobile/android/`.
+- *Problems hit and fixed along the way:*
+  - Licence answers piped from PowerShell never reached `sdkmanager.bat`, so the first setup silently installed nothing. It now uses a stdin file, a log file, and exit-code + folder checks.
+  - `gradlew.bat` needs a full path under cmd.
+  - The first full test run timed out under build CPU load; it passed when re-run alone.
+- *Verified:* the APK built (first build 26 min, rebuild 7 min), 98 MB, `garden.xeno.app`, minSdk 24 / target 36, arm64, with BLUETOOTH_SCAN/CONNECT, ACCESS_FINE_LOCATION, ACCESS_WIFI_STATE and POST_NOTIFICATIONS (checked with `aapt dump badging`). Mobile 28 suites / 152 tests, typecheck + lint clean.

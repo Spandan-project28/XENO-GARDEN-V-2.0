@@ -532,7 +532,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
     - rejoin mode (already mine): connect → wifi creds → online.
   - **Failures:** a wrong saved password clears that vault entry and asks again once; other failures are per-device with "Retry", never blocking the other devices.
   - Tests cover 2 devices with zero prompts, the first-time prompt, a wrong password, a rejoin device, and a device that isn't mine in rejoin mode (skipped with a message).
-- [ ] P10.6 Mobile auto-setup UI:
+- [x] P10.6 Mobile auto-setup UI:
   - Home auto-discovers nearby devices (when Bluetooth permission is already granted, or after one tap on "Find my devices") and shows a "2 Xeno devices nearby → Connect" card.
   - Connect opens a single sheet: one row per device with live step text and a progress ring, the one-time WiFi password field if needed, then a success state.
   - The empty Home state is a single big "Find my devices" action.

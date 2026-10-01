@@ -17,12 +17,20 @@ beforeEach(() => {
 });
 
 describe('HomeScreen', () => {
-  it('shows an inviting empty state that starts onboarding', async () => {
+  it('shows an inviting empty state that finds devices', async () => {
     mockList.mockResolvedValue([]);
     await renderWithProviders(<HomeScreen />);
-    expect(await screen.findByText("Let's add your first device")).toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole('button', { name: 'Add device' }));
-    expect(router.push).toHaveBeenCalledWith('/onboarding');
+    expect(await screen.findByText('Let’s find your devices')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Find my devices' }));
+    expect(router.push).toHaveBeenCalledWith('/setup');
+  });
+
+  it('does not greet guests by their placeholder name', async () => {
+    useSession.setState({ user: { id: 'u', email: null, name: 'My garden', guest: true, createdAt: '' } });
+    mockList.mockResolvedValue([]);
+    await renderWithProviders(<HomeScreen />);
+    await screen.findByText('Let’s find your devices');
+    expect(screen.queryByText(/, My$/)).toBeNull();
   });
 
   it('greets the user and renders live device cards', async () => {

@@ -1,12 +1,13 @@
 import type { DevicePublic } from '@xeno/shared';
 import { router } from 'expo-router';
-import { Droplets, Leaf, Plus, Sprout, Wifi } from 'lucide-react-native';
+import { Bluetooth, Droplets, Leaf, Plus, Wifi } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ConnectionBanner } from '@/components/ConnectionBanner';
 import { PushPrompt } from '@/components/PushPrompt';
 import { useTheme } from '@/design';
+import { NearbyCard } from '@/features/setup/NearbyCard';
 import { errorMessage } from '@/lib/api';
 import { greeting } from '@/lib/format';
 import { useLiveDevices } from '@/lib/realtime';
@@ -24,21 +25,23 @@ export function HomeScreen() {
   const list = useMemo(() => devices.data ?? [], [devices.data]);
   useLiveDevices(list.map((d) => d.id));
 
-  const firstName = user?.name.split(' ')[0];
-  const addDevice = () => router.push('/onboarding');
+  // Guests have a placeholder name ("My garden"), so they get a plain greeting.
+  const firstName = user && !user.guest ? user.name.split(' ')[0] : undefined;
+  const addDevice = () => router.push('/setup');
 
   return (
     <Screen
       withTabBar
       eyebrow={`${greeting()}${firstName ? `, ${firstName}` : ''}`}
       title="Your garden"
-      headerRight={<IconButton icon={Plus} accessibilityLabel="Add a device" onPress={addDevice} testID="home-add-device" />}
+      headerRight={<IconButton icon={Plus} accessibilityLabel="Add devices" onPress={addDevice} testID="home-add-device" />}
       refreshing={devices.isRefetching}
       onRefresh={() => void devices.refetch()}
       testID="home-screen"
     >
       <View style={{ gap: t.space.lg }}>
         <ConnectionBanner />
+        <NearbyCard />
 
         {devices.isPending ? (
           <>
@@ -55,10 +58,10 @@ export function HomeScreen() {
         ) : list.length === 0 ? (
           <Card variant="glass" padding={t.space.xl}>
             <EmptyState
-              icon={Sprout}
-              title="Let's add your first device"
-              message="Power on your Xeno Garden device and keep your phone nearby. Setup takes about a minute. No IP addresses, promise."
-              actionLabel="Add device"
+              icon={Bluetooth}
+              title="Let’s find your devices"
+              message="Switch on your Xeno devices and keep your phone close. The app finds them and connects them for you."
+              actionLabel="Find my devices"
               onAction={addDevice}
             />
           </Card>

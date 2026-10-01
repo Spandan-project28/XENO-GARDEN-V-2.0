@@ -292,3 +292,13 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - Passwords are saved only after the device proves them; wrong saved passwords are forgotten. Per-device failures and retry never block the other devices.
   - The mock transport now simulates several devices (`SIMULATED_DEVICES`, Xeno-DEM1/2) with per-device networks and rejoin behaviour.
 - *Verified:* 10 engine tests (2 devices with zero prompts; one prompt reused + saved; wrong saved password; 5 GHz explanation; mobile-data fallback to a saved network; rejoin; stranger skipped; failure isolation + retry; name prediction; Bluetooth-off error). Onboarding tests still green.
+
+## 2026-10-01 — P10.6 Auto-setup UI
+- *Changed:*
+  - `/setup` screen (full-screen modal): radar while looking, with a "can't find it?" hint after 15 s; a row per device with live plain-language steps, a spinner, a tick, or Retry; an inline one-time WiFi card (network chips from what the device sees, the password field, and a reason-specific message for first time / wrong password / 5 GHz); a celebration when done; "Set up manually instead" as a fallback.
+  - The Garden screen gets `NearbyCard`: quiet discovery (only when no OS prompt is needed), "2 new devices nearby — Xeno 1, Xeno 2 → Connect", or "Tomatoes needs WiFi → Fix WiFi". The empty state is "Find my devices", and + opens `/setup`.
+  - A shared controller (`useAutoSetup`), reset on Done and on sign-out.
+  - Transports gain `canScanQuietly()`; the demo transport offers both simulated devices and stops showing ones already set up and online.
+  - Fixed guests being greeted as "My".
+  - No colour or token changes.
+- *Verified:* mobile typecheck + lint clean; 27 suites / 144 tests (full screen flow with one prompt, zero-typing, password validation, wrong password then fix, NearbyCard shows/hides, Home empty state → /setup, guest greeting); Android export OK.

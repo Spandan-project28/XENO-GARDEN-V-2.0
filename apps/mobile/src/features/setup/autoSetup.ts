@@ -169,6 +169,11 @@ export class AutoSetup {
 
   // ── discovery ──────────────────────────────────────────────────────────────
 
+  /** Whether discovery can start right now without any OS prompt. */
+  async canDiscoverQuietly(): Promise<boolean> {
+    return (await this.deps.transport.canScanQuietly?.().catch(() => false)) ?? false;
+  }
+
   /** Starts (or restarts) looking for nearby devices. May show the OS permission prompt. */
   async discover() {
     if (this.state.phase === 'running') return;

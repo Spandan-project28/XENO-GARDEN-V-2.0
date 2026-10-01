@@ -116,6 +116,8 @@ export class MockTransport implements ProvisioningTransport {
   constructor(
     private readonly devices: MockDeviceSpec[] = [SIMULATED_DEVICES[0]!],
     private readonly stepMs = 600,
+    /** Simulated devices that are already set up stop advertising (like the real firmware). */
+    private readonly isSetUp: (hardwareId: string) => boolean = () => false,
   ) {}
   lastSession: MockSession | null = null;
   /** Every session opened, per device id (tests inspect what each device received). */
@@ -123,9 +125,17 @@ export class MockTransport implements ProvisioningTransport {
 
   async ensureReady() {}
 
+  async canScanQuietly() {
+    return true;
+  }
+
   /** Devices appear one after another, like real advertisements. */
   scan(onFound: (d: FoundDevice) => void) {
-    const timers = this.devices.map((d, i) => setTimeout(() => onFound(d.found), this.stepMs * (i + 1)));
+    const timers = this.devices.map((d, i) =>
+      setTimeout(() => {
+        if (!this.isSetUp(d.info.hwId)) onFound(d.found);
+      }, this.stepMs * (i + 1)),
+    );
     return () => timers.forEach(clearTimeout);
   }
 

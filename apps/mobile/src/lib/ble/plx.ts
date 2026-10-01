@@ -33,13 +33,19 @@ function getManager(): BleManager {
   }
 }
 
+function androidApi(): number {
+  return typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10);
+}
+
+function androidPerms() {
+  return androidApi() >= 31
+    ? [PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN, PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT]
+    : [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION];
+}
+
 async function requestAndroidPermissions(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
-  const api = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10);
-  const perms =
-    api >= 31
-      ? [PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN, PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT]
-      : [PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION];
+  const perms = androidPerms();
   const res = await PermissionsAndroid.requestMultiple(perms);
   return perms.every((p) => res[p] === PermissionsAndroid.RESULTS.GRANTED);
 }
@@ -134,6 +140,18 @@ class PlxSession implements ProvisioningSession {
 }
 
 export class PlxTransport implements ProvisioningTransport {
+  /** Android only: on iOS creating the manager itself shows the Bluetooth prompt. */
+  async canScanQuietly() {
+    if (Platform.OS !== 'android') return false;
+    try {
+      const granted = await Promise.all(androidPerms().map((p) => PermissionsAndroid.check(p)));
+      if (!granted.every(Boolean)) return false;
+      return (await getManager().state()) === 'PoweredOn';
+    } catch {
+      return false; // e.g. Expo Go: no Bluetooth module
+    }
+  }
+
   async ensureReady() {
     if (Platform.OS === 'web') throw new BleError('unsupported', 'Bluetooth setup works in the phone app.');
     const m = getManager();

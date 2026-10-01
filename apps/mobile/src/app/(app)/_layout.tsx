@@ -18,6 +18,7 @@ export default function AppLayout() {
     <Stack
       screenOptions={{ headerShown: false, animation: 'slide_from_right', contentStyle: { backgroundColor: t.colors.bg } }}
     >
+      <Stack.Screen name="setup" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
     </Stack>
   );

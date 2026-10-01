@@ -3,6 +3,7 @@
  * hardware (flag `demoProvisioning`) and for tests. Behaves like the firmware:
  *  • password "wrong…" or empty password on a secured network → wifi_failed: wrong_password
  *  • SSID "NoInternet" → wifi_failed: no_internet
+ *  • rejoin mode (already set up, lost its WiFi) → no claim code, cloud credentials refused
  */
 import {
   cloudCredsPayload,
@@ -14,9 +15,29 @@ import {
 } from '@xeno/shared';
 import type { FoundDevice, ProvisioningSession, ProvisioningTransport } from './types';
 
-export const SIMULATED_DEVICE: FoundDevice = { id: 'sim-1', name: 'XenoGarden-DEMO', rssi: -42, simulated: true };
+export interface MockDeviceSpec {
+  found: FoundDevice;
+  info: BleInfoPayload;
+  /** Networks this device can see (defaults to MOCK_NETWORKS). */
+  networks?: WifiNetwork[];
+}
 
-const NETWORKS: WifiNetwork[] = [
+const demoInfo = (n: number, claimCode: string): BleInfoPayload => ({
+  proto: 1,
+  hwId: `xg-de00000000${String(n).padStart(2, '0')}`,
+  fw: '2.1.0-sim',
+  claimCode,
+  mode: 'setup',
+});
+
+/** Two simulated devices in setup mode, as they'd appear fresh out of the box. */
+export const SIMULATED_DEVICES: MockDeviceSpec[] = [
+  { found: { id: 'sim-1', name: 'Xeno-DEM1', rssi: -42, simulated: true }, info: demoInfo(1, 'DEMO2345') },
+  { found: { id: 'sim-2', name: 'Xeno-DEM2', rssi: -55, simulated: true }, info: demoInfo(2, 'DEMO2346') },
+];
+export const SIMULATED_DEVICE: FoundDevice = SIMULATED_DEVICES[0]!.found;
+
+export const MOCK_NETWORKS: WifiNetwork[] = [
   { ssid: 'Home WiFi', rssi: -48, secure: true },
   { ssid: 'Garden Shed 2.4G', rssi: -67, secure: true },
   { ssid: 'NoInternet', rssi: -72, secure: false },
@@ -27,19 +48,25 @@ export class MockSession implements ProvisioningSession {
   readonly simulated = true;
   private listeners = new Set<(s: ProvisioningStatePayload) => void>();
   private cloud = new FrameAssembler();
-  cloudConfigured = false;
+  /** Rejoin-mode devices already have their cloud credentials. */
+  cloudConfigured: boolean;
   lastWifi: { ssid: string; password: string } | null = null;
+  disconnected = false;
 
   constructor(
     private readonly info: BleInfoPayload,
     private readonly stepMs = 600,
-  ) {}
+    private readonly networks: WifiNetwork[] = MOCK_NETWORKS,
+  ) {
+    this.cloudConfigured = info.mode === 'rejoin';
+  }
 
   async readInfo() {
     return this.info;
   }
 
   async writeCloudCreds(creds: Parameters<ProvisioningSession['writeCloudCreds']>[0]) {
+    if (this.info.mode === 'rejoin') throw new Error('cloud credentials are refused in rejoin mode');
     // Exercise the real framing path, like the firmware would receive it.
     let msg: string | null = null;
     for (const f of toFrames(JSON.stringify(creds), 40)) msg = this.cloud.push(f);
@@ -49,12 +76,12 @@ export class MockSession implements ProvisioningSession {
 
   async scanWifi() {
     await sleep(this.stepMs);
-    return NETWORKS;
+    return this.networks;
   }
 
   async writeWifiCreds(ssid: string, password: string) {
     this.lastWifi = { ssid, password };
-    const net = NETWORKS.find((n) => n.ssid === ssid);
+    const net = this.networks.find((n) => n.ssid === ssid);
     void (async () => {
       this.emit({ s: 'connecting_wifi' });
       await sleep(this.stepMs);
@@ -76,6 +103,7 @@ export class MockSession implements ProvisioningSession {
   }
 
   async disconnect() {
+    this.disconnected = true;
     this.listeners.clear();
   }
 
@@ -86,22 +114,32 @@ export class MockSession implements ProvisioningSession {
 
 export class MockTransport implements ProvisioningTransport {
   constructor(
-    private readonly info: BleInfoPayload = { proto: 1, hwId: 'xg-de0000000001', fw: '2.0.0-sim', claimCode: 'DEMO2345', mode: 'setup' },
+    private readonly devices: MockDeviceSpec[] = [SIMULATED_DEVICES[0]!],
     private readonly stepMs = 600,
   ) {}
   lastSession: MockSession | null = null;
+  /** Every session opened, per device id (tests inspect what each device received). */
+  readonly sessions = new Map<string, MockSession>();
 
   async ensureReady() {}
 
+  /** Devices appear one after another, like real advertisements. */
   scan(onFound: (d: FoundDevice) => void) {
-    const timer = setTimeout(() => onFound(SIMULATED_DEVICE), this.stepMs);
-    return () => clearTimeout(timer);
+    const timers = this.devices.map((d, i) => setTimeout(() => onFound(d.found), this.stepMs * (i + 1)));
+    return () => timers.forEach(clearTimeout);
   }
 
-  async connect() {
+  async connect(id: string = this.devices[0]!.found.id) {
+    const spec = this.devices.find((d) => d.found.id === id);
+    if (!spec) throw new Error(`unknown simulated device ${id}`);
     await sleep(this.stepMs / 2);
-    this.lastSession = new MockSession(this.info, this.stepMs);
+    this.lastSession = new MockSession(spec.info, this.stepMs, spec.networks);
+    this.sessions.set(id, this.lastSession);
     return this.lastSession;
+  }
+
+  has(id: string) {
+    return this.devices.some((d) => d.found.id === id);
   }
 }
 

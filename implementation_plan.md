@@ -524,7 +524,7 @@ Legend: `[ ]` todo · `[x]` done and verified · `[~] BLOCKED` · `🧑 HUMAN` =
   - `wifiVault` keeps SSID → password in SecureStore, never in AsyncStorage or logs.
   - `currentPhoneWifi()` reads the phone's SSID via NetInfo (Android: location permission requested with a clear explanation; null on mobile data, iOS or no permission).
   - Tests.
-- [ ] P10.5 Mobile auto-setup engine (`features/setup/autoSetup.ts`, a pure state machine like `flow.ts`, tested with the mock transport):
+- [x] P10.5 Mobile auto-setup engine (`features/setup/autoSetup.ts`, a pure state machine like `flow.ts`, tested with the mock transport):
   - **Discover:** scan for `Xeno-*` devices and name them `Xeno 1…n` in discovery order (the backend's default name wins after claim).
   - **Choose WiFi:** phone's current SSID if the device can see it → else the strongest network the device sees that's in the vault → else ask once (SSID prefilled; a picker of the networks the device sees). A password typed once is saved and reused for every other device.
   - **Each device, in sequence:**

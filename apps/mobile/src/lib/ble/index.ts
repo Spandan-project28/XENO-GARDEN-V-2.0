@@ -4,7 +4,7 @@ import { PlxTransport } from './plx';
 import type { FoundDevice, ProvisioningSession, ProvisioningTransport } from './types';
 
 export * from './types';
-export { MockTransport, SIMULATED_DEVICE } from './mock';
+export { MOCK_NETWORKS, MockTransport, SIMULATED_DEVICE, SIMULATED_DEVICES, type MockDeviceSpec } from './mock';
 
 /**
  * The transport onboarding uses: real Bluetooth, plus (when the demo flag is on) a simulated
@@ -30,6 +30,6 @@ export function createTransport(): ProvisioningTransport {
       };
     },
     connect: (id: string): Promise<ProvisioningSession> =>
-      id === SIMULATED_DEVICE.id ? mock.connect() : real.connect(id),
+      id === SIMULATED_DEVICE.id ? mock.connect(id) : real.connect(id),
   };
 }

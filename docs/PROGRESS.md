@@ -283,3 +283,12 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - `currentPhoneWifi({ask})`: Android SSID via NetInfo after the location permission, with a plain-language rationale; null on mobile data, iOS, hidden SSIDs or refusal.
   - app.json declares ACCESS_FINE_LOCATION and ACCESS_WIFI_STATE.
 - *Verified:* 8 new tests (round trip, recency order, forget, never in AsyncStorage, cap, corrupt data, permission ask/no-ask, unknown SSID, cellular, iOS); full mobile suite green.
+
+## 2026-10-01 — P10.5 Auto-setup engine
+- *Changed:*
+  - `features/setup/autoSetup.ts`: discover → connect all, sequentially. New devices are claimed and given cloud + WiFi; rejoin devices get WiFi only when they're mine, and a stranger's device is skipped untouched.
+  - Names are predicted with the server's rule (`Xeno N`), and rejoin devices keep their existing name.
+  - WiFi choice order: last working network this run → phone's WiFi (if the device sees it and the password is known) → any visible saved network → ask once. The prompt reason covers first time, wrong password, and "the device can't see your phone's network" (5 GHz).
+  - Passwords are saved only after the device proves them; wrong saved passwords are forgotten. Per-device failures and retry never block the other devices.
+  - The mock transport now simulates several devices (`SIMULATED_DEVICES`, Xeno-DEM1/2) with per-device networks and rejoin behaviour.
+- *Verified:* 10 engine tests (2 devices with zero prompts; one prompt reused + saved; wrong saved password; 5 GHz explanation; mobile-data fallback to a saved network; rejoin; stranger skipped; failure isolation + retry; name prediction; Bluetooth-off error). Onboarding tests still green.

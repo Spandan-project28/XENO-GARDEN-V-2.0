@@ -87,10 +87,7 @@ async def ble_check(name_hint=None):
 
     async with BleakClient(dev, timeout=20.0) as client:
         report(client.is_connected, "Bluetooth: connect")
-        try:
-            await client.pair()
-        except Exception as e:  # already bonded or OS handles it on first encrypted read
-            print(f"      (pair: {e})", flush=True)
+        # No explicit pair(): like the phone, the OS pairs on the first encrypted read.
 
         raw = None
         for attempt in range(4):
@@ -135,7 +132,16 @@ async def ble_check(name_hint=None):
             elif f.get("t") == "end":
                 done.set()
 
-        await client.start_notify(WIFI_SCAN, on_scan)
+        for attempt in range(3):
+            try:
+                await client.start_notify(WIFI_SCAN, on_scan)
+                break
+            except OSError as e:
+                print(f"      (subscribe attempt {attempt + 1}: {e})", flush=True)
+                if attempt == 2:
+                    report(False, "subscribe to WiFi scan results", str(e))
+                    return
+                await asyncio.sleep(2)
         await client.write_gatt_char(WIFI_SCAN, b'0/1:{"scan":1}', response=True)
         try:
             await asyncio.wait_for(done.wait(), 20)

@@ -1,19 +1,20 @@
 import { env } from '@/config/env';
 import { flags } from '@/config/flags';
 import { MockTransport, SIMULATED_DEVICES, type MockBridge } from './mock';
-import { PlxTransport } from './plx';
+import { bluetoothAvailable, PlxTransport } from './plx';
 import type { FoundDevice, ProvisioningSession, ProvisioningTransport } from './types';
 
 export * from './types';
 export { MOCK_NETWORKS, MockTransport, SIMULATED_DEVICE, SIMULATED_DEVICES, type MockDeviceSpec } from './mock';
 
 /**
- * The transport setup uses: real Bluetooth, plus (when the demo flag is on) two simulated
- * devices in the scan list so the whole flow can be tried without hardware.
+ * The transport setup uses. In the installed app: real Bluetooth only, so only real devices are
+ * listed and Bluetooth problems (off, permission refused) are reported. Where there is no
+ * Bluetooth (Expo Go, browser) and the demo flag is on: two simulated devices instead.
  */
 export function createTransport(opts: { isSetUp?: (hardwareId: string) => boolean } = {}): ProvisioningTransport {
   const real = new PlxTransport();
-  if (!flags.demoProvisioning) return real;
+  if (!flags.demoProvisioning || bluetoothAvailable()) return real;
   const mock = new MockTransport(SIMULATED_DEVICES, 600, opts.isSetUp, simBridge(env.simBridgeUrl));
   return {
     ensureReady: () => real.ensureReady().catch(() => undefined),

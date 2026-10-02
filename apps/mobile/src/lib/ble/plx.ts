@@ -34,6 +34,17 @@ function getManager(): BleManager {
   }
 }
 
+/** True in the installed app (dev/production build); false in Expo Go and the browser. */
+export function bluetoothAvailable(): boolean {
+  if (Platform.OS === 'web') return false;
+  try {
+    getManager();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function androidApi(): number {
   return typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10);
 }

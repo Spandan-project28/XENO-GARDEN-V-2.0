@@ -9,6 +9,7 @@
 #include <string>
 
 #include "xg_automation.h"
+#include "xg_dht.h"
 #include "xg_frames.h"
 #include "xg_pairing.h"
 #include "xg_shadow.h"
@@ -222,6 +223,23 @@ static void testPairing() {
   CHECK(strcmp(pairModeName(PairMode::Setup), "setup") == 0, "names");
 }
 
+static void testDht() {
+  float t = 0, h = 0;
+  const uint8_t d22[5] = {0x02, 0x8C, 0x01, 0x5F, 0xEE};  // 65.2 %, 35.1 C
+  CHECK(decodeDht(d22, true, t, h), "dht22 frame");
+  CHECK(fabsf(h - 65.2f) < 0.01f && fabsf(t - 35.1f) < 0.01f, "dht22 values");
+  const uint8_t d22neg[5] = {0x02, 0x8C, 0x80, 0x65, 0x73};  // -10.1 C
+  CHECK(decodeDht(d22neg, true, t, h) && fabsf(t + 10.1f) < 0.01f, "dht22 negative");
+  const uint8_t d11[5] = {45, 0, 23, 0, 68};
+  CHECK(decodeDht(d11, false, t, h) && fabsf(h - 45.0f) < 0.01f && fabsf(t - 23.0f) < 0.01f, "dht11");
+  const uint8_t bad[5] = {45, 0, 23, 0, 69};
+  CHECK(!decodeDht(bad, false, t, h), "bad checksum rejected");
+  const uint8_t none[5] = {0, 0, 0, 0, 0};
+  CHECK(!decodeDht(none, false, t, h), "no sensor (all zero) rejected");
+  const uint8_t ff[5] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
+  CHECK(!decodeDht(ff, false, t, h), "line stuck high rejected (out of range)");
+}
+
 int main(int argc, char** argv) {
   const char* vectors = argc > 1 ? argv[1] : "../packages/shared/test-vectors/automation.json";
   testVectors(vectors);
@@ -230,6 +248,7 @@ int main(int argc, char** argv) {
   testShadow();
   testManualClock();
   testPairing();
+  testDht();
   printf("\n%d checks passed, %d failed\n", g_passed, g_failed);
   return g_failed ? 1 : 0;
 }

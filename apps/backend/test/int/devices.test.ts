@@ -159,3 +159,22 @@ describe('default device names', () => {
     expect(d.name).toBe('Xeno 1');
   });
 });
+
+describe('broker address in development (DEVICE_BROKER_HOST=auto)', () => {
+  it('hands the device the address the phone used to reach the server', async () => {
+    const auto = await createTestApp({ DEVICE_BROKER_HOST: 'auto', DEVICE_BROKER_TLS: 'false', DEVICE_BROKER_PORT: '1883' });
+    try {
+      const u = await auto.signUp();
+      const res = await auto.app.inject({
+        method: 'POST',
+        url: '/v1/devices/claim',
+        headers: { ...u.headers, host: '192.168.0.108:4000' },
+        payload: { hardwareId: HW, claimCode: CODE },
+      });
+      expect(res.statusCode).toBe(201);
+      expect(res.json().mqtt).toMatchObject({ host: '192.168.0.108', port: 1883, tls: false });
+    } finally {
+      await auto.app.close();
+    }
+  });
+});

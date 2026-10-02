@@ -108,16 +108,35 @@ const port = Number(args.port);
 const mqttPort = Number(args['mqtt-port']);
 const apiUrl = `http://${lan}:${port}`;
 
+// Two dev servers at once is a trap: the old one keeps the port (and its old network address).
+async function portInUse(p) {
+  const { createServer } = await import('node:net');
+  return new Promise((resolve) => {
+    const srv = createServer()
+      .once('error', () => resolve(true))
+      .once('listening', () => srv.close(() => resolve(false)))
+      .listen(p, '0.0.0.0');
+  });
+}
+for (const p of [port, mqttPort]) {
+  if (await portInUse(p)) {
+    console.error(
+      `\x1b[31m[dev]\x1b[0m Port ${p} is already in use: another "npm run dev" is probably still running.\n` +
+        '      Close that terminal (or press Ctrl+C in it), then run "npm run dev" again.',
+    );
+    process.exit(1);
+  }
+}
+
 const mongo = await startMongo();
 
 // Let the Expo app find the dev backend automatically.
 const mobileEnv = join(root, 'apps', 'mobile', '.env.local');
 if (existsSync(join(root, 'apps', 'mobile'))) {
-  writeFileSync(
-    mobileEnv,
-    `# written by tools/dev.mjs — do not commit\nEXPO_PUBLIC_API_URL=${apiUrl}\nEXPO_PUBLIC_SIM_BRIDGE_URL=http://${lan}:${SIM_BRIDGE_PORT}\n`,
-  );
-  log(`Mobile app will use ${apiUrl} (apps/mobile/.env.local)`);
+  // No fixed address any more: in development the app finds this server on the same machine that
+  // serves its JavaScript (Metro), so it keeps working after the PC moves to another network.
+  writeFileSync(mobileEnv, `# written by tools/dev.mjs — do not commit (the app finds the dev server by itself)\n`);
+  log(`Mobile app will find this server automatically (now ${apiUrl})`);
 }
 
 log('Building shared contracts…');
@@ -133,7 +152,8 @@ run('backend', 'npm', ['run', 'dev', '-w', '@xeno/backend'], {
   MONGO_URI: mongo.uri,
   MQTT_EMBEDDED: 'true',
   MQTT_EMBEDDED_PORT: String(mqttPort),
-  DEVICE_BROKER_HOST: lan,
+  // Devices get the address the phone used to reach this server (follows network changes).
+  DEVICE_BROKER_HOST: 'auto',
   DEVICE_BROKER_PORT: String(mqttPort),
   DEVICE_BROKER_TLS: 'false',
   ...devSecrets(),

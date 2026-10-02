@@ -2,7 +2,7 @@
 // Hardware + timing configuration. NO network secrets here: WiFi and broker credentials are
 // provisioned over Bluetooth by the app and stored in NVS (flash).
 
-#define XG_FW_VERSION "2.1.1"
+#define XG_FW_VERSION "2.1.3"
 
 // ── Pins (ESP32 DevKit) ──────────────────────────────────────────────────────
 #define PIN_DHT 4            // DHT11/DHT22 data
@@ -13,7 +13,7 @@
 #define PIN_LED 2            // on-board status LED
 #define PIN_BUTTON 0         // BOOT button (active LOW)
 
-#define DHT_TYPE DHT11       // change to DHT22 if you use the more precise sensor
+#define DHT_TYPE 11          // 11 = DHT11, 22 = DHT22 (the more precise sensor)
 
 // ── Timing ───────────────────────────────────────────────────────────────────
 #define CONTROL_TICK_MS 1000          // automation + safety loop

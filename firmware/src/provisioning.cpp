@@ -96,7 +96,9 @@ void begin(const String& hardwareId, const String& bleName) {
   NimBLEDevice::setMTU(185);
   // Encrypted link (LE Secure Connections, "Just Works"): WiFi passwords and the claim code are
   // never sent in clear over the air. Physical access is still required to open pairing mode.
-  NimBLEDevice::setSecurityAuth(true, false, true);
+  // No bonding: every setup pairs fresh, so keys can never go stale between phone and board
+  // (with bonding, a reset/reflash left phones holding old keys and every encrypted read failed).
+  NimBLEDevice::setSecurityAuth(false, false, true);
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
   server = NimBLEDevice::createServer();
   server->setCallbacks(new ServerCb());

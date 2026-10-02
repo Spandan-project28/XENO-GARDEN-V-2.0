@@ -38,7 +38,12 @@ export const envSchema = z
     MQTT_USERNAME: z.string().optional(),
     MQTT_PASSWORD: z.string().optional(),
 
-    /** Broker address handed to devices at claim time (what the ESP32 connects to). */
+    /**
+     * Broker address handed to devices at claim time (what the ESP32 connects to).
+     * `auto` (development only): the host the phone used to reach this server — the device is on
+     * the phone's network during setup, so it can reach the same address, even after the dev PC
+     * moved to another network.
+     */
     DEVICE_BROKER_HOST: z.string().min(1).default('localhost'),
     DEVICE_BROKER_PORT: z.coerce.number().int().min(1).max(65535).default(1883),
     DEVICE_BROKER_TLS: bool.default(false),
@@ -83,6 +88,13 @@ export const envSchema = z
         code: 'custom',
         path: ['MQTT_URL'],
         message: 'MQTT_URL is required when MQTT_EMBEDDED=false',
+      });
+    }
+    if (env.NODE_ENV === 'production' && env.DEVICE_BROKER_HOST === 'auto') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DEVICE_BROKER_HOST'],
+        message: 'Set the public broker hostname in production (auto is for local development)',
       });
     }
     if (env.NODE_ENV === 'production' && env.JWT_ACCESS_SECRET.includes('change-me')) {

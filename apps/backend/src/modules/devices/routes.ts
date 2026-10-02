@@ -20,7 +20,7 @@ export const deviceRoutes: FastifyPluginAsyncZod = async (app) => {
       config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
       schema: { ...common, body: claimBody, response: { 201: claimResponse } },
     },
-    async (req, reply) => reply.code(201).send(await devices.claim(req.userId, req.body)),
+    async (req, reply) => reply.code(201).send(await devices.claim(req.userId, req.body, { requestHost: req.hostname })),
   );
 
   app.get(

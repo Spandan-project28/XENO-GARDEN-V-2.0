@@ -44,6 +44,13 @@ async function defaultName(ownerId: string): Promise<string> {
   return nextDefaultDeviceName(names.map((d) => d.name));
 }
 
+/** `auto` → the host the client used to reach the API (without port / IPv6 brackets). */
+export function brokerHost(configured: string, requestHost: string | undefined): string {
+  if (configured !== 'auto') return configured;
+  const h = (requestHost ?? '').trim().replace(/^\[(.*)\]$/, '$1');
+  return h && h !== 'localhost' && h !== '127.0.0.1' && h !== '::1' ? h : 'localhost';
+}
+
 export interface DeviceServiceDeps {
   env: Env;
   bus: AppBus;
@@ -67,7 +74,7 @@ export function createDeviceService({ env, bus, now }: DeviceServiceDeps) {
      * mode, so presenting it proves physical access. A device owned by someone else can only be
      * taken over with its claim code; every claim rotates the device's MQTT password (ADR-011).
      */
-    async claim(userId: string, body: ClaimBody): Promise<ClaimResponse> {
+    async claim(userId: string, body: ClaimBody, opts: { requestHost?: string } = {}): Promise<ClaimResponse> {
       const codeHash = sha256(body.claimCode);
       const mqttPassword = randomToken(24);
       const t = now();
@@ -133,7 +140,7 @@ export function createDeviceService({ env, bus, now }: DeviceServiceDeps) {
       return {
         device: toDevicePublic(device),
         mqtt: {
-          host: env.DEVICE_BROKER_HOST,
+          host: brokerHost(env.DEVICE_BROKER_HOST, opts.requestHost),
           port: env.DEVICE_BROKER_PORT,
           tls: env.DEVICE_BROKER_TLS,
           username: device.hardwareId,

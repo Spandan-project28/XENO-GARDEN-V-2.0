@@ -86,9 +86,19 @@ void saveCalibration(const Calibration& c) {
   prefs.putBool("cal_wm", c.wetMeasured);
 }
 
+/** 8 characters, all from the claim-code alphabet (what the backend accepts). */
+static bool validClaimCode(const String& code) {
+  if (code.length() != 8) return false;
+  for (size_t i = 0; i < code.length(); i++) {
+    if (!strchr(XG_CLAIM_CODE_ALPHABET, code[i])) return false;
+  }
+  return true;
+}
+
 String claimCode() {
   String code = prefs.getString("claim", "");
-  if (code.length() == 8) return code;
+  // A code left by older firmware (or corrupted flash) is replaced, or the device could never be claimed.
+  if (validClaimCode(code)) return code;
   const char* alphabet = XG_CLAIM_CODE_ALPHABET;
   const size_t n = strlen(alphabet);
   code = "";

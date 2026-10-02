@@ -36,6 +36,8 @@ export interface FlowDeps {
   transport: ProvisioningTransport;
   claim: (hardwareId: string, claimCode: string) => Promise<ClaimResponse>;
   getDevice: (id: string) => Promise<DevicePublic>;
+  /** Devices already in this garden (a device in rejoin mode only accepts new WiFi). */
+  myDevices?: () => DevicePublic[];
   rename: (id: string, name: string) => Promise<DevicePublic>;
   /** Timing knobs (tests shrink them). */
   timing?: Partial<{ scanTimeoutMs: number; joinTimeoutMs: number; confirmTimeoutMs: number; pollMs: number }>;
@@ -135,16 +137,27 @@ export class ProvisioningFlow {
     try {
       this.session = await this.deps.transport.connect(d.id);
       const info = await this.session.readInfo();
-      this.set({ connectStage: 'claiming' });
-      const claim = await this.deps.claim(info.hwId, info.claimCode);
-      await this.session.writeCloudCreds({
-        h: claim.mqtt.host,
-        p: claim.mqtt.port,
-        t: claim.mqtt.tls,
-        u: claim.mqtt.username,
-        pw: claim.mqtt.password,
-      });
-      this.set({ device: claim.device, connectStage: 'scanning_wifi' });
+      if (info.mode === 'rejoin') {
+        // Already set up and just lost its WiFi: no claim, only new WiFi — and only for its owner.
+        const mine = this.deps.myDevices?.().find((x) => x.hardwareId === info.hwId);
+        if (!mine) {
+          throw Object.assign(new Error('This device belongs to another garden. Its owner can give it new WiFi.'), {
+            code: 'DEVICE_ALREADY_CLAIMED',
+          });
+        }
+        this.set({ device: mine, connectStage: 'scanning_wifi' });
+      } else {
+        this.set({ connectStage: 'claiming' });
+        const claim = await this.deps.claim(info.hwId, info.claimCode);
+        await this.session.writeCloudCreds({
+          h: claim.mqtt.host,
+          p: claim.mqtt.port,
+          t: claim.mqtt.tls,
+          u: claim.mqtt.username,
+          pw: claim.mqtt.password,
+        });
+        this.set({ device: claim.device, connectStage: 'scanning_wifi' });
+      }
       const networks = await this.session.scanWifi();
       this.set({ step: 'wifi', networks, connectStage: null, busy: false });
     } catch (err) {

@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import type { DevicePublic } from '@xeno/shared';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   Bluetooth,
@@ -49,6 +50,7 @@ export function OnboardingScreen({ flowFactory }: { flowFactory?: () => Provisio
           transport: createTransport(),
           claim: (hardwareId, claimCode) => api.devices.claim({ hardwareId, claimCode }),
           getDevice: (id) => api.devices.get(id),
+          myDevices: () => qc.getQueryData<DevicePublic[]>(qk.devices) ?? [],
           rename: (id, name) => api.devices.update(id, { name }),
         },
         mode,

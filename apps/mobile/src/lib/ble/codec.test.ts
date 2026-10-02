@@ -1,4 +1,5 @@
 import { base64ToUtf8, utf8ToBase64 } from './codec';
+import { checkInfo } from './plx';
 
 describe('BLE codec', () => {
   it.each(['{"ssid":"Home"}', 'Café Wi-Fi', 'घर का वाईफाई', '🌿 garden 🌧️', ''])('round-trips %p', (s) => {
@@ -18,5 +19,13 @@ describe('BLE codec', () => {
     // Truncated multi-byte sequence at the end, and a code point past U+10FFFF.
     expect(base64ToUtf8(Buffer.from([0x41, 0xe2, 0x82]).toString('base64'))).toBe('A��');
     expect(base64ToUtf8(Buffer.from([0xf4, 0x90, 0x80, 0x80]).toString('base64'))).toBe('�');
+  });
+
+  it('a setup-mode device with a broken claim code asks for a firmware re-flash', () => {
+    const base = { proto: 1, hwId: 'xg-aabbccddeeff', fw: '2.1.0' };
+    expect(() => checkInfo({ ...base, mode: 'setup', claimCode: '��AB12' })).toThrow(/Re-flash/);
+    expect(() => checkInfo({ ...base, mode: 'setup', claimCode: 'DEMO2345' })).toThrow(/Re-flash/);
+    expect(checkInfo({ ...base, mode: 'setup', claimCode: 'ABCD2345' }).claimCode).toBe('ABCD2345');
+    expect(checkInfo({ ...base, mode: 'rejoin', claimCode: '' }).mode).toBe('rejoin');
   });
 });

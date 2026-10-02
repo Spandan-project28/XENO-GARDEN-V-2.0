@@ -125,4 +125,29 @@ describe('ProvisioningFlow', () => {
     expect(flow.getState().devices).toEqual([]);
     await flow.dispose();
   });
+
+  it('rejoin mode: an own device that lost WiFi gets new WiFi without a claim', async () => {
+    const mine = makeDevice({ id: 'eeeeeeeeeeeeeeeeeeeeeee1', hardwareId: 'xg-3c71bf12ab34', name: 'Tomatoes' });
+    const transport = new MockTransport(
+      [{ found: SIMULATED_DEVICE, info: { proto: 1, hwId: 'xg-3c71bf12ab34', fw: '2.1.0', claimCode: '', mode: 'rejoin' } }],
+      10,
+    );
+    const { flow, deps } = setup({ transport, myDevices: () => [mine] });
+    await flow.chooseDevice(SIMULATED_DEVICE);
+    expect(flow.getState()).toMatchObject({ step: 'wifi', device: { name: 'Tomatoes' }, error: null });
+    expect(deps.claim).not.toHaveBeenCalled();
+    await flow.dispose();
+  });
+
+  it('rejoin mode: someone else’s device is refused with a clear message', async () => {
+    const transport = new MockTransport(
+      [{ found: SIMULATED_DEVICE, info: { proto: 1, hwId: 'xg-00000000ffff', fw: '2.1.0', claimCode: '', mode: 'rejoin' } }],
+      10,
+    );
+    const { flow, deps } = setup({ transport, myDevices: () => [] });
+    await flow.chooseDevice(SIMULATED_DEVICE);
+    expect(flow.getState().error?.title).toBe('Device belongs to another account');
+    expect(deps.claim).not.toHaveBeenCalled();
+    await flow.dispose();
+  });
 });

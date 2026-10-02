@@ -5,6 +5,7 @@
 import {
   BLE,
   bleInfoPayload,
+  CLAIM_CODE_PATTERN,
   provisioningStatePayload,
   toFrames,
   wifiScanFrame,
@@ -50,6 +51,16 @@ async function requestAndroidPermissions(): Promise<boolean> {
   return perms.every((p) => res[p] === PermissionsAndroid.RESULTS.GRANTED);
 }
 
+const REFLASH = 'Connected, but couldn’t read the device. Re-flash it with the latest Xeno firmware, then try again.';
+
+/** A setup-mode device must present a well-formed claim code; anything else means bad firmware. */
+export function checkInfo<T extends { mode: 'setup' | 'rejoin'; claimCode: string }>(info: T): T {
+  if (info.mode === 'setup' && !CLAIM_CODE_PATTERN.test(info.claimCode.trim().toUpperCase())) {
+    throw new BleError('connect_failed', REFLASH);
+  }
+  return info;
+}
+
 class PlxSession implements ProvisioningSession {
   readonly simulated = false;
   constructor(private readonly device: Device) {}
@@ -85,18 +96,16 @@ class PlxSession implements ProvisioningSession {
     let lastErr: unknown;
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
-        return bleInfoPayload.parse(JSON.parse(await this.read(C.info)));
+        return checkInfo(bleInfoPayload.parse(JSON.parse(await this.read(C.info))));
       } catch (err) {
+        if (err instanceof BleError) throw err;
         lastErr = err;
         await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
       }
     }
     // Connected, but the reply isn't a valid device description (e.g. old or broken firmware).
     if (lastErr instanceof SyntaxError || (lastErr as { name?: string })?.name === 'ZodError') {
-      throw new BleError(
-        'connect_failed',
-        'Connected, but couldn’t read the device. Re-flash it with the latest Xeno firmware, then try again.',
-      );
+      throw new BleError('connect_failed', REFLASH);
     }
     throw lastErr;
   }

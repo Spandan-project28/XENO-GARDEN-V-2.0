@@ -126,7 +126,10 @@ static void writeInfo(xg::PairMode m) {
   info["hwId"] = hwId;
   info["fw"] = XG_FW_VERSION;
   info["mode"] = m == xg::PairMode::Rejoin ? "rejoin" : "setup";
-  info["claimCode"] = m == xg::PairMode::Rejoin ? "" : storage::claimCode().c_str();
+  // Assign a String (ArduinoJson copies it). A `.c_str()` of the temporary would leave the document
+  // pointing at freed memory and the phone would read garbage bytes.
+  const String code = m == xg::PairMode::Rejoin ? String() : storage::claimCode();
+  info["claimCode"] = code;
   std::string out;
   serializeJson(info, out);
   cInfo->setValue(out);

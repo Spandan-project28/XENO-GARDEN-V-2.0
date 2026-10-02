@@ -91,6 +91,13 @@ class PlxSession implements ProvisioningSession {
         await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
       }
     }
+    // Connected, but the reply isn't a valid device description (e.g. old or broken firmware).
+    if (lastErr instanceof SyntaxError || (lastErr as { name?: string })?.name === 'ZodError') {
+      throw new BleError(
+        'connect_failed',
+        'Connected, but couldn’t read the device. Re-flash it with the latest Xeno firmware, then try again.',
+      );
+    }
     throw lastErr;
   }
 

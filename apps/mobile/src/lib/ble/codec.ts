@@ -14,24 +14,44 @@ export function utf8ToBase64(s: string): string {
   return btoa(bin);
 }
 
-/** base64 → UTF-8 string. */
+const REPLACEMENT = '�';
+
+/**
+ * base64 → UTF-8 string. Malformed bytes (truncated sequences, invalid lead bytes, values past
+ * U+10FFFF) become U+FFFD instead of throwing, so a bad radio packet can never crash setup — the
+ * JSON/Zod validation that follows reports it as a readable error.
+ */
 export function base64ToUtf8(b64: string): string {
   const bin = atob(b64);
   let out = '';
+  const cont = (j: number) => j < bin.length && (bin.charCodeAt(j) & 0xc0) === 0x80;
   for (let i = 0; i < bin.length; ) {
-    const b0 = bin.charCodeAt(i++);
-    if (b0 < 0x80) out += String.fromCharCode(b0);
-    else if (b0 < 0xe0) out += String.fromCharCode(((b0 & 31) << 6) | (bin.charCodeAt(i++) & 63));
-    else if (b0 < 0xf0)
-      out += String.fromCharCode(((b0 & 15) << 12) | ((bin.charCodeAt(i++) & 63) << 6) | (bin.charCodeAt(i++) & 63));
-    else {
-      const cp =
-        ((b0 & 7) << 18) |
-        ((bin.charCodeAt(i++) & 63) << 12) |
-        ((bin.charCodeAt(i++) & 63) << 6) |
-        (bin.charCodeAt(i++) & 63);
-      out += String.fromCodePoint(cp);
+    const b0 = bin.charCodeAt(i);
+    const len = b0 < 0x80 ? 1 : b0 >= 0xc2 && b0 < 0xe0 ? 2 : b0 >= 0xe0 && b0 < 0xf0 ? 3 : b0 >= 0xf0 && b0 < 0xf5 ? 4 : 0;
+    if (len === 0) {
+      out += REPLACEMENT;
+      i++;
+      continue;
     }
+    let ok = true;
+    for (let k = 1; k < len; k++) if (!cont(i + k)) ok = false;
+    if (!ok) {
+      out += REPLACEMENT;
+      i++;
+      continue;
+    }
+    let cp: number;
+    if (len === 1) cp = b0;
+    else if (len === 2) cp = ((b0 & 31) << 6) | (bin.charCodeAt(i + 1) & 63);
+    else if (len === 3) cp = ((b0 & 15) << 12) | ((bin.charCodeAt(i + 1) & 63) << 6) | (bin.charCodeAt(i + 2) & 63);
+    else
+      cp =
+        ((b0 & 7) << 18) |
+        ((bin.charCodeAt(i + 1) & 63) << 12) |
+        ((bin.charCodeAt(i + 2) & 63) << 6) |
+        (bin.charCodeAt(i + 3) & 63);
+    out += cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff) ? REPLACEMENT : String.fromCodePoint(cp);
+    i += len;
   }
   return out;
 }

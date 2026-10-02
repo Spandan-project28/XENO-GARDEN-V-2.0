@@ -123,7 +123,8 @@ function failureText(reason: WifiFailureReason | 'cloud_failed' | 'bluetooth', s
 
 function errorText(err: unknown): string {
   if (err instanceof BleError) {
-    return err.code === 'connect_failed' ? 'Couldn’t connect. Move closer to the device and retry.' : err.message;
+    // The transport's message is already plain language and says what went wrong.
+    return err.message || 'Couldn’t connect. Move closer to the device and retry.';
   }
   const e = err as { code?: string; message?: string };
   if (e?.code === 'DEVICE_ALREADY_CLAIMED') return 'This device belongs to another garden. Its owner must remove it first.';

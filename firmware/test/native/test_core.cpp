@@ -192,27 +192,32 @@ static void testManualClock() {
 }
 
 static void testPairing() {
-  PairingPolicy p(120000);
-  // Fresh device: setup mode until configured.
-  CHECK(p.update(false, false, false, 0) == PairMode::Setup, "unconfigured -> setup");
-  // Configured and online: nothing advertised.
-  CHECK(p.update(true, false, true, 1000) == PairMode::Off, "online -> off");
-  // WiFi drops: not immediately (router reboot), only after 2 minutes.
-  CHECK(p.update(true, false, false, 2000) == PairMode::Off, "just lost wifi -> off");
-  CHECK(p.update(true, false, false, 2000 + 119999) == PairMode::Off, "still under 2 min");
-  CHECK(p.update(true, false, false, 2000 + 120000) == PairMode::Rejoin, "2 min without wifi -> rejoin");
-  CHECK(p.update(true, false, false, 500000) == PairMode::Rejoin, "stays in rejoin");
-  // Back online: rejoin ends at once.
-  CHECK(p.update(true, false, true, 500001) == PairMode::Off, "wifi back -> off");
-  // A short blip restarts the clock.
-  CHECK(p.update(true, false, false, 600000) == PairMode::Off, "new outage starts the clock again");
-  CHECK(p.update(true, false, true, 650000) == PairMode::Off, "recovered before 2 min");
-  CHECK(p.update(true, false, false, 700000) == PairMode::Off, "another outage");
-  CHECK(p.update(true, false, false, 700000 + 119000) == PairMode::Off, "clock was reset");
-  // The owner's button/command always opens setup (claim code readable), even while offline.
-  CHECK(p.update(true, true, false, 900000) == PairMode::Setup, "setup window wins over rejoin");
-  CHECK(p.update(true, true, true, 900001) == PairMode::Setup, "setup window while online");
-  CHECK(p.update(true, false, true, 900002) == PairMode::Off, "window closed -> off");
+  PairingPolicy p(60000);
+  // update(configured, setupWindow, wifi, cloud, now)
+  CHECK(p.update(false, false, false, false, 0) == PairMode::Setup, "unconfigured -> setup");
+  CHECK(p.update(true, false, true, true, 1000) == PairMode::Off, "online -> off");
+  // WiFi drops: not immediately (router reboot), only after a minute.
+  CHECK(p.update(true, false, false, false, 2000) == PairMode::Off, "just lost wifi -> off");
+  CHECK(p.update(true, false, false, false, 2000 + 59999) == PairMode::Off, "still under 1 min");
+  CHECK(p.update(true, false, false, false, 2000 + 60000) == PairMode::Rejoin, "1 min without wifi -> rejoin");
+  CHECK(p.update(true, false, false, false, 500000) == PairMode::Rejoin, "stays in rejoin");
+  // WiFi back after a long outage: the server gets its own minute, no instant setup mode.
+  CHECK(p.update(true, false, true, false, 500001) == PairMode::Off, "wifi back, server not yet -> off");
+  CHECK(p.update(true, false, true, true, 505000) == PairMode::Off, "server back -> off");
+  // On WiFi but the server never answers (stale server address): setup mode so it can be re-linked.
+  CHECK(p.update(true, false, true, false, 600000) == PairMode::Off, "server lost -> wait");
+  CHECK(p.update(true, false, true, false, 600000 + 59999) == PairMode::Off, "under 1 min");
+  CHECK(p.update(true, false, true, false, 600000 + 60000) == PairMode::Setup, "1 min without server -> setup");
+  CHECK(p.update(true, false, true, true, 700000) == PairMode::Off, "server reachable again -> off");
+  // A short blip restarts the clocks.
+  CHECK(p.update(true, false, false, false, 800000) == PairMode::Off, "new outage");
+  CHECK(p.update(true, false, true, true, 830000) == PairMode::Off, "recovered");
+  CHECK(p.update(true, false, false, false, 900000) == PairMode::Off, "another outage");
+  CHECK(p.update(true, false, false, false, 900000 + 59000) == PairMode::Off, "clock was reset");
+  // The owner's button/command always opens setup.
+  CHECK(p.update(true, true, false, false, 1000000) == PairMode::Setup, "setup window while offline");
+  CHECK(p.update(true, true, true, true, 1000001) == PairMode::Setup, "setup window while online");
+  CHECK(p.update(true, false, true, true, 1000002) == PairMode::Off, "window closed -> off");
   CHECK(strcmp(pairModeName(PairMode::Rejoin), "rejoin") == 0, "names");
   CHECK(strcmp(pairModeName(PairMode::Setup), "setup") == 0, "names");
 }

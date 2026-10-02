@@ -292,7 +292,7 @@ void loop() {
   const bool configured = wifi_link::hasSavedNetworks() && mqtt_link::hasCloud();
   const bool setupWindow = setupUntil == 0 || (setupUntil > 0 && now < setupUntil);
   if (setupUntil > 0 && now >= setupUntil) setupUntil = -1;
-  const xg::PairMode mode = policy.update(configured, setupWindow, wifi_link::connected(), now);
+  const xg::PairMode mode = policy.update(configured, setupWindow, wifi_link::connected(), mqtt_link::connected(), now);
 
   const bool busy = clientConnected || job != Job::None || now < lingerUntil;
   if (mode != xg::PairMode::Off) {

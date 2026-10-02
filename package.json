@@ -18,6 +18,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "dev": "node tools/dev.mjs",
+    "dev:demo": "node tools/dev.mjs --sim",
     "android:setup": "powershell -ExecutionPolicy Bypass -File tools/android/setup.ps1",
     "android:apk": "node tools/android/build-apk.mjs",
     "deploy:cloud": "node tools/deploy.mjs",

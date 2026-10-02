@@ -21,6 +21,7 @@ import {
   type WifiFailureReason,
   type WifiNetwork,
 } from '@xeno/shared';
+import { serverUnreachable } from '@/lib/serverHint';
 import { BleError, type FoundDevice, type ProvisioningSession, type ProvisioningTransport } from '@/lib/ble/types';
 
 export type ItemStatus =
@@ -128,7 +129,7 @@ function errorText(err: unknown): string {
   }
   const e = err as { code?: string; message?: string };
   if (e?.code === 'DEVICE_ALREADY_CLAIMED') return 'This device belongs to another garden. Its owner must remove it first.';
-  if (e?.code === 'NETWORK' || e?.code === 'TIMEOUT') return 'Your phone is offline. Connect to the internet and retry.';
+  if (e?.code === 'NETWORK' || e?.code === 'TIMEOUT') return serverUnreachable().message;
   return 'Something went wrong. Please retry.';
 }
 

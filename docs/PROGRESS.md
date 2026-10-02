@@ -370,3 +370,15 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
   - P7.11: flash and calibrate the board.
   - P9.4: Atlas + Fly accounts, then `npm run deploy:cloud`.
   - P9.6: build the release APK and test on three networks.
+
+## 2026-10-03 — Real hardware bring-up (board xg-68fe710c5414), all verified on the device
+- *Found and fixed on the real ESP32:*
+  1. The BLE info JSON used `.c_str()` of a temporary, so phones read garbage ("Code point out of bounds").
+  2. A stored claim code from older firmware wasn't valid; it's now regenerated. The app also checks the code and asks for a re-flash.
+  3. The DHT library tripped the interrupt watchdog with no sensor attached, rebooting the board every ~30 s. Replaced with an own reader with µs timeouts (`xg_dht`, host-tested).
+  4. A device on WiFi but unable to reach its server stayed invisible. It now returns to setup mode after 1 min, and to rejoin mode after 1 min without WiFi.
+  5. The dev server handed devices a stale LAN address after the PC changed network. Now `DEVICE_BROKER_HOST=auto` uses the address the phone used; the app finds the dev server via Metro; `npm run dev` refuses to start twice.
+  6. BLE pairing keys went stale after resets, breaking every later setup. Firmware 2.1.4 uses no BLE pairing (trade-off documented in SECURITY.md).
+  7. "Your phone is offline" was misleading; the message now names the server address and the fix.
+  8. Mock data is gone by default: `npm run dev` runs real devices only (`dev:demo` for the simulator), and the app shows simulated devices only when demo mode is explicitly on.
+- *Verified on hardware* with `tools/hil/full_setup.py`, twice back to back on firmware 2.1.4: guest → BLE info → claim → cloud + WiFi creds → online on T5-018 → readings (real DHT 25.8 °C / 93 %) → **pump ON confirmed by the board in 0.5 s, OFF in 0.5 s** → reset. Firmware native 246/246, ESP32 build OK, backend 32 unit + 103 int + 7 e2e, mobile 156.

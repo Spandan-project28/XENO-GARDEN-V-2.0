@@ -94,20 +94,21 @@ void begin(const String& hardwareId, const String& bleName) {
   NimBLEDevice::init(bleName.c_str());
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
   NimBLEDevice::setMTU(185);
-  // Encrypted link (LE Secure Connections, "Just Works"): WiFi passwords and the claim code are
-  // never sent in clear over the air. Physical access is still required to open pairing mode.
-  // No bonding: every setup pairs fresh, so keys can never go stale between phone and board
-  // (with bonding, a reset/reflash left phones holding old keys and every encrypted read failed).
-  NimBLEDevice::setSecurityAuth(false, false, true);
+  // No Bluetooth pairing: setup must work every time on every phone. Required encryption meant
+  // pairing, and pairing keys went stale whenever either side forgot them (reset, reflash, other
+  // phone) — then every read failed. Protection instead: setup mode only opens on a new/reset
+  // device or by the owner and closes again, and claiming needs the claim code (physical access).
+  // See docs/SECURITY.md (app-level encryption of the WiFi password is the planned upgrade).
+  NimBLEDevice::setSecurityAuth(false, false, false);
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
   server = NimBLEDevice::createServer();
   server->setCallbacks(new ServerCb());
   NimBLEService* svc = server->createService(XG_BLE_SERVICE_UUID);
 
-  cInfo = svc->createCharacteristic(XG_BLE_CHAR_INFO, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::READ_ENC);
+  cInfo = svc->createCharacteristic(XG_BLE_CHAR_INFO, NIMBLE_PROPERTY::READ);
   cScan = svc->createCharacteristic(XG_BLE_CHAR_WIFI_SCAN, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY);
-  cWifi = svc->createCharacteristic(XG_BLE_CHAR_WIFI_CREDS, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_ENC);
-  cCloud = svc->createCharacteristic(XG_BLE_CHAR_CLOUD_CREDS, NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_ENC);
+  cWifi = svc->createCharacteristic(XG_BLE_CHAR_WIFI_CREDS, NIMBLE_PROPERTY::WRITE);
+  cCloud = svc->createCharacteristic(XG_BLE_CHAR_CLOUD_CREDS, NIMBLE_PROPERTY::WRITE);
   cState = svc->createCharacteristic(XG_BLE_CHAR_STATE, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
   cScan->setCallbacks(new WriteCb(0));
   cWifi->setCallbacks(new WriteCb(1));

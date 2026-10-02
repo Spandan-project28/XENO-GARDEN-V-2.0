@@ -7,6 +7,7 @@
  * over Bluetooth, and the device connects *out* to the cloud from whatever network it's on.
  */
 import type { ClaimResponse, DevicePublic, ProvisioningState, WifiFailureReason, WifiNetwork } from '@xeno/shared';
+import { serverUnreachable } from '@/lib/serverHint';
 import { BleError, type FoundDevice, type ProvisioningSession, type ProvisioningTransport } from '@/lib/ble/types';
 
 export type Step = 'intro' | 'scanning' | 'connecting' | 'wifi' | 'password' | 'joining' | 'naming' | 'done';
@@ -289,7 +290,7 @@ export function describeError(err: unknown, retry: Step = 'scanning'): FlowError
     return { title: 'Device belongs to another account', message: e.message ?? 'Ask its owner to remove it first.', retry: 'scanning' };
   }
   if (e?.code === 'NETWORK' || e?.code === 'TIMEOUT') {
-    return { title: 'Your phone is offline', message: 'Setup needs internet on your phone for a moment. Check your connection and try again.', retry };
+    return { ...serverUnreachable(), retry };
   }
   return { title: 'Something went wrong', message: e?.message ?? 'Please try again.', retry };
 }

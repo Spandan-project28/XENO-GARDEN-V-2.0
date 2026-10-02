@@ -2,10 +2,11 @@
 /**
  * One-command local development — no Docker, no manual IPs:
  *
- *   npm run dev                 backend (watch) + embedded MQTT + local Mongo + 1 simulated device
+ *   npm run dev                 backend (watch) + embedded MQTT + local Mongo — real devices only
+ *   npm run dev:demo            the same + simulated devices (demo without hardware)
  *                               + the simulator's "virtual radio" (port 4100), so the app's demo
  *                               devices (Expo Go has no Bluetooth) come alive when you set them up
- *   npm run dev -- --no-sim     without the simulator
+ *   npm run dev -- --sim        same as dev:demo
  *   npm run dev -- --scenario drying --devices 2
  *
  * • MongoDB: uses $MONGO_URI if set, otherwise starts a persistent local mongod
@@ -28,7 +29,7 @@ mkdirSync(dataDir, { recursive: true });
 
 const { values: args } = parseArgs({
   options: {
-    'no-sim': { type: 'boolean', default: false },
+    sim: { type: 'boolean', default: false },
     scenario: { type: 'string', default: 'steady' },
     devices: { type: 'string', default: '1' },
     port: { type: 'string', default: process.env.PORT ?? '4000' },
@@ -135,7 +136,11 @@ const mobileEnv = join(root, 'apps', 'mobile', '.env.local');
 if (existsSync(join(root, 'apps', 'mobile'))) {
   // No fixed address any more: in development the app finds this server on the same machine that
   // serves its JavaScript (Metro), so it keeps working after the PC moves to another network.
-  writeFileSync(mobileEnv, `# written by tools/dev.mjs — do not commit (the app finds the dev server by itself)\n`);
+  writeFileSync(
+    mobileEnv,
+    `# written by tools/dev.mjs — do not commit (the app finds the dev server by itself)\n` +
+      (args.sim ? 'EXPO_PUBLIC_FLAG_DEMO_PROVISIONING=true\n' : ''),
+  );
   log(`Mobile app will find this server automatically (now ${apiUrl})`);
 }
 
@@ -162,7 +167,7 @@ run('backend', 'npm', ['run', 'dev', '-w', '@xeno/backend'], {
 await waitForHealth(`http://127.0.0.1:${port}`);
 log(`Backend ready → ${apiUrl}  (Swagger: ${apiUrl}/docs, MQTT: ${lan}:${mqttPort})`);
 
-if (!args['no-sim']) {
+if (args.sim) {
   run(
     'simulator',
     'npm',
@@ -178,6 +183,8 @@ if (!args['no-sim']) {
   );
   log('Simulator running. In the app, tap "Find my devices" to add the demo devices (Xeno-DEM1/DEM2).');
   log('The simulator also runs its own device for the account demo@xeno.garden / demo-garden-1.');
+} else {
+  log('Ready — real devices only. KEEP THIS WINDOW OPEN while you use the app (Ctrl+C to stop).');
 }
 
 const shutdown = async () => {

@@ -2,7 +2,7 @@
 // Hardware + timing configuration. NO network secrets here: WiFi and broker credentials are
 // provisioned over Bluetooth by the app and stored in NVS (flash).
 
-#define XG_FW_VERSION "2.1.3"
+#define XG_FW_VERSION "2.1.4"
 
 // ── Pins (ESP32 DevKit) ──────────────────────────────────────────────────────
 #define PIN_DHT 4            // DHT11/DHT22 data

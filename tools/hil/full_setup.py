@@ -99,6 +99,12 @@ async def main():
                 break
             except Exception as e:
                 print(f"      (read info {attempt + 1}: {e})", flush=True)
+                if "Authentication" in str(e) or "Encryption" in str(e):
+                    # Android pairs by itself here; Windows needs to be asked.
+                    try:
+                        await client.pair()
+                    except Exception as pe:
+                        print(f"      (pair: {pe})", flush=True)
                 await asyncio.sleep(1 + attempt)
         if not step(info is not None and info.get("mode") == "setup", "read info (setup mode)", json.dumps(info)):
             return
@@ -147,6 +153,23 @@ async def main():
     latest = d.get("latest") or {}
     step(bool(d.get("online")), "server sees the board online")
     step(bool(d.get("latest")), "readings arrive", f"soil={latest.get('soilMoisture')} raw={latest.get('soilRaw')} temp={latest.get('temperature')} hum={latest.get('humidity')} pump={latest.get('pump')}")
+
+    # Real-time control: "Water now" must switch the real relay within seconds, and Stop must stop it.
+    def pump_is(on, within=15):
+        end = time.time() + within
+        while time.time() < end:
+            _, dev = api(args.api, "GET", f"/v1/devices/{device_id}", token=token)
+            if (dev.get("reported") or {}).get("pump") is on:
+                return True, round(within - (end - time.time()), 1)
+            time.sleep(0.5)
+        return False, within
+
+    st, _ = api(args.api, "POST", f"/v1/devices/{device_id}/pump", {"action": "ON", "durationSec": 60}, token)
+    ok, secs = pump_is(True)
+    step(st in (200, 201, 202) and ok, "Water now → relay ON", f"confirmed by the board in {secs} s")
+    st, _ = api(args.api, "POST", f"/v1/devices/{device_id}/pump", {"action": "OFF"}, token)
+    ok, secs = pump_is(False)
+    step(st in (200, 201, 202) and ok, "Stop → relay OFF", f"confirmed by the board in {secs} s")
 
     if not args.keep:
         st, _ = api(args.api, "POST", f"/v1/devices/{device_id}/commands", {"type": "factory_reset"}, token)

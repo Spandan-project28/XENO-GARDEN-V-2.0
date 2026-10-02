@@ -96,6 +96,11 @@ async def ble_check(name_hint=None):
                 break
             except Exception as e:
                 print(f"      (read info attempt {attempt + 1}: {e})", flush=True)
+                if "Authentication" in str(e) or "Encryption" in str(e):
+                    try:
+                        await client.pair()  # Android does this by itself; Windows needs asking
+                    except Exception as pe:
+                        print(f"      (pair: {pe})", flush=True)
                 await asyncio.sleep(1 + attempt)
         if raw is None:
             report(False, "read device info", "could not read (encryption/pairing?)")

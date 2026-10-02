@@ -34,7 +34,7 @@
 
 ### Setup over Bluetooth
 - Pairing mode opens only on first boot (unconfigured), on a 5 s physical button hold, or by a command from the device's owner. It closes 2 min later, or 15 s after setup succeeds.
-- **Encrypted link**: LE Secure Connections, bonded. The WiFi password, broker credentials and claim code are never sent in clear over the air. "Just Works" pairing doesn't stop an active man-in-the-middle **within radio range during the pairing window**. We accept that because the window needs physical access to the device.
+- **No Bluetooth pairing (firmware 2.1.4).** Earlier versions required an encrypted, bonded link. In practice pairing keys went stale whenever one side forgot them (board reset or reflash, another phone), and then every read failed, so setup broke at random. Setup now uses a plain BLE link. Exposure is limited by: setup mode opens only on a new or reset device, by the owner's command or button, or after the device has been unreachable for a minute, and it closes again; WiFi credentials are only sent during that window; claiming needs the claim code (physical proximity). **Known gap:** someone within radio range during setup could overhear the WiFi password. **Planned fix:** app-level encryption of the credentials (ECDH key agreement over BLE), which doesn't depend on OS pairing.
 - Claiming requires the device's claim code, which is only readable over the encrypted link while in pairing mode. That is proof of physical possession. Another account's device can't be claimed remotely. The claim code survives factory reset.
 - Received broker credentials must name this device (`username == hardwareId`). Frame reassembly is capped at 2 KB.
 

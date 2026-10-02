@@ -11,6 +11,6 @@ export const flags = {
   plantHealth: parse(process.env.EXPO_PUBLIC_FLAG_PLANT_HEALTH, true),
   /** Photo upload for ML plant-health analysis. */
   photoUpload: parse(process.env.EXPO_PUBLIC_FLAG_PHOTO_UPLOAD, false),
-  /** Simulated Bluetooth device for onboarding demos without hardware. */
-  demoProvisioning: parse(process.env.EXPO_PUBLIC_FLAG_DEMO_PROVISIONING, __DEV__),
+  /** Simulated devices for demos without hardware. Off unless asked for (real devices only). */
+  demoProvisioning: parse(process.env.EXPO_PUBLIC_FLAG_DEMO_PROVISIONING, false),
 } as const;

@@ -120,6 +120,7 @@ describe('pump', () => {
 
   it('OFF in auto mode pauses automation (default 30 min)', async () => {
     await goOnline();
+    await put(`/v1/devices/${id}/mode`, { mode: 'auto' });
     const res = await post(`/v1/devices/${id}/pump`, { action: 'OFF' });
     expect(res.json().device.desired.manual).toMatchObject({ pump: 'OFF', durationSec: 1800 });
   });

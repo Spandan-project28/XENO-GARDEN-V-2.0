@@ -16,7 +16,7 @@ import { AppError, notFound } from '../../lib/errors.js';
 
 export const initialDesired = (): DesiredState => ({
   version: 1,
-  mode: 'auto',
+  mode: 'manual',
   settings: { ...defaultSettings },
   manual: null,
 });

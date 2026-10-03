@@ -32,7 +32,7 @@ describe('devices', () => {
       name: 'Xeno 1',
       online: false,
       syncPending: true,
-      desired: { version: 1, mode: 'auto', settings: DEFAULT_SETTINGS, manual: null },
+      desired: { version: 1, mode: 'manual', settings: DEFAULT_SETTINGS, manual: null },
       reported: null,
     });
     expect(body.mqtt).toMatchObject({ host: 'mqtt.example.test', port: 8883, tls: true, username: HW });

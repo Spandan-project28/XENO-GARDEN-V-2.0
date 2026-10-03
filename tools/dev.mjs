@@ -14,10 +14,13 @@
  * • Detects this machine's LAN address so phones and real ESP32 boards on the same WiFi can
  *   reach the dev backend, and writes it to apps/mobile/.env.local (EXPO_PUBLIC_API_URL).
  * • A random JWT secret is generated once and kept in .data/dev-secrets.json.
+ * • If the firmware has been built (firmware/.pio/build/esp32dev/firmware.bin), it is offered as a
+ *   firmware update over WiFi: the app's "Update firmware" button installs it on boards that run
+ *   an older version — no USB cable needed.
  */
 import { spawn } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -93,6 +96,46 @@ async function waitForHealth(url, timeoutMs = 60_000) {
   throw new Error('backend did not become healthy in time');
 }
 
+/**
+ * Serves the locally built firmware over HTTPS (boards only download updates over https; the
+ * image is checked against its SHA-256, so a self-signed certificate is enough on the LAN).
+ */
+async function localFirmwareRelease(host) {
+  const bin = join(root, 'firmware', '.pio', 'build', 'esp32dev', 'firmware.bin');
+  const config = join(root, 'firmware', 'include', 'config.h');
+  if (!existsSync(bin) || !existsSync(config)) return {};
+  const version = /#define XG_FW_VERSION "([^"]+)"/.exec(readFileSync(config, 'utf8'))?.[1];
+  if (!version) return {};
+  if (statSync(config).mtimeMs > statSync(bin).mtimeMs) {
+    log(`Firmware ${version} is not built yet (config.h is newer than firmware.bin): no update offered`);
+    return {};
+  }
+  const image = readFileSync(bin);
+  const sha256 = createHash('sha256').update(image).digest('hex');
+  const certFile = join(dataDir, 'ota-cert.json');
+  let cert = existsSync(certFile) ? JSON.parse(readFileSync(certFile, 'utf8')) : null;
+  if (!cert) {
+    const { generate } = await import('selfsigned');
+    const c = await generate([{ name: 'commonName', value: 'xeno-dev-ota' }], { days: 3650, keySize: 2048 });
+    cert = { key: c.private, cert: c.cert };
+    writeFileSync(certFile, JSON.stringify(cert));
+  }
+  const { createServer } = await import('node:https');
+  const path = `/firmware/${version}.bin`;
+  const server = createServer(cert, (req, res) => {
+    if (req.url !== path) return res.writeHead(404).end();
+    log(`Board is downloading firmware ${version}`);
+    res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-length': image.length }).end(image);
+  });
+  await new Promise((resolve, reject) => server.once('error', reject).listen(OTA_PORT, '0.0.0.0', resolve));
+  log(`Firmware ${version} offered as an update over WiFi (app → device → Firmware)`);
+  return {
+    FIRMWARE_LATEST_VERSION: version,
+    FIRMWARE_LATEST_URL: `https://${host}:${OTA_PORT}${path}`,
+    FIRMWARE_LATEST_SHA256: sha256,
+  };
+}
+
 const children = [];
 function run(name, cmd, cmdArgs, env) {
   const child = spawn(cmd, cmdArgs, { cwd: root, env: { ...process.env, ...env }, stdio: 'inherit', shell: process.platform === 'win32' });
@@ -105,6 +148,7 @@ function run(name, cmd, cmdArgs, env) {
 
 const lan = lanAddress();
 const SIM_BRIDGE_PORT = 4100;
+const OTA_PORT = 4443;
 const port = Number(args.port);
 const mqttPort = Number(args['mqtt-port']);
 const apiUrl = `http://${lan}:${port}`;
@@ -119,7 +163,7 @@ async function portInUse(p) {
       .listen(p, '0.0.0.0');
   });
 }
-for (const p of [port, mqttPort]) {
+for (const p of [port, mqttPort, OTA_PORT]) {
   if (await portInUse(p)) {
     console.error(
       `\x1b[31m[dev]\x1b[0m Port ${p} is already in use: another "npm run dev" is probably still running.\n` +
@@ -130,6 +174,10 @@ for (const p of [port, mqttPort]) {
 }
 
 const mongo = await startMongo();
+const firmwareRelease = await localFirmwareRelease(lan).catch((e) => {
+  log(`Firmware update over WiFi not available: ${e.message}`);
+  return {};
+});
 
 // Let the Expo app find the dev backend automatically.
 const mobileEnv = join(root, 'apps', 'mobile', '.env.local');
@@ -161,6 +209,7 @@ run('backend', 'npm', ['run', 'dev', '-w', '@xeno/backend'], {
   DEVICE_BROKER_HOST: 'auto',
   DEVICE_BROKER_PORT: String(mqttPort),
   DEVICE_BROKER_TLS: 'false',
+  ...firmwareRelease,
   ...devSecrets(),
 });
 

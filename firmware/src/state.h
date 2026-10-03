@@ -12,7 +12,7 @@
 struct DeviceState {
   // Configuration (from desired / NVS)
   xg::DeviceSettings settings;
-  xg::Mode mode = xg::Mode::Auto;
+  xg::Mode mode = xg::Mode::Manual;  // nothing waters by itself until the user picks Auto
   uint32_t appliedVersion = 0;
   xg::ManualCommand manual{};
   Calibration calibration;

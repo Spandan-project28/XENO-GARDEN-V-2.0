@@ -7,6 +7,7 @@
 #include "timebase.h"
 #include "xg_automation.h"
 #include "xg_dht.h"
+#include "xg_sensors.h"
 
 namespace sensors {
 
@@ -14,8 +15,7 @@ static portMUX_TYPE dhtMux = portMUX_INITIALIZER_UNLOCKED;
 static int64_t lastDhtAt = -DHT_MIN_INTERVAL_MS;
 static float lastTemp = NAN;
 static float lastHum = NAN;
-static bool rainStable = false;
-static uint8_t rainAgree = 0;
+static xg::RainDetector rain;
 
 void begin() {
   analogReadResolution(12);
@@ -90,17 +90,17 @@ SensorReading read() {
   r.humidityValid = !isnan(lastHum);
   r.humidity = lastHum;
 
-  // Rain: require 3 consecutive identical readings before changing state (debounce).
-  const bool raw = digitalRead(PIN_RAIN) == LOW;
-  if (raw != rainStable) {
-    if (++rainAgree >= 3) {
-      rainStable = raw;
-      rainAgree = 0;
-    }
-  } else {
-    rainAgree = 0;
+  // Rain: the level seen at power-on is "dry", whatever the module's polarity (see xg_sensors.h).
+  const int rainLevel = digitalRead(PIN_RAIN);
+  r.rain = rain.update(rainLevel == HIGH);
+
+  // Wiring check over USB serial: raw levels every 10 s.
+  static int64_t lastDiag = 0;
+  if (now - lastDiag >= 10000) {
+    lastDiag = now;
+    log_i("sensors: soil raw=%d (GPIO%d) rain pin=%d -> %s, temp=%.1f hum=%.1f", r.soilRaw, PIN_SOIL, rainLevel,
+          r.rain ? "rain" : "dry", lastTemp, lastHum);
   }
-  r.rain = rainStable;
   return r;
 }
 

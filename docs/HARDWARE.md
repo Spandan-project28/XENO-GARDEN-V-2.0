@@ -22,7 +22,7 @@ The firmware in `firmware/` targets a standard **ESP32 DevKit (ESP32-WROOM-32)**
 |---|---|---|---|
 | Soil moisture (analog) | **GPIO34** | AOUT | ADC1 pin: keeps working while WiFi is on (ADC2 doesn't) |
 | DHT data | **GPIO4** | DATA (10 kΩ pull-up to 3.3 V if your board lacks one) | |
-| Rain (digital) | **GPIO27** | DO | Internal pull-up enabled; LOW = rain |
+| Rain (digital) | **GPIO27** | DO | Internal pull-up enabled. Either polarity works: the level at power-on is learned as "dry" |
 | Relay input | **GPIO26** | IN | Driven HIGH at boot, before anything else, so the pump stays **off** |
 | Status LED | GPIO2 | on-board LED | |
 | Button | GPIO0 | on-board **BOOT** button | Hold 5 s = pairing, 15 s = factory reset |
@@ -68,7 +68,15 @@ Every capacitive sensor reads a little differently. In the app: **Device → Set
 1. Pull the sensor out, wipe it dry, hold it in the air, then tap **measure dry**.
 2. Dip it in a glass of water up to the line, then tap **measure wet**.
 
-The values are stored on the device. The firmware handles either sensor direction (capacitive sensors read *higher* when dry). A reading pinned at 0 or 4095 is treated as **sensor disconnected**: automatic watering pauses and you get an alert.
+Until you calibrate, the device widens its default range to what your sensor really reads (a sensor powered from 5 V reads ~3900 in air instead of ~3000), so readings are sensible straight away. The values are stored on the device. The firmware handles either sensor direction (capacitive sensors read *higher* when dry). A reading pinned at 0 or 4095 is treated as **sensor disconnected**: automatic watering pauses and you get an alert.
+
+## Rain sensor
+
+The board learns the rain sensor's "dry" level during its first 3 seconds after power-on, so **keep the sensor dry when you power the board up**. After that it reports rain only while water is on the sensor. It works whichever way the module's output is wired (most pull `DO` low when wet, some drive it high). If rain is never detected, turn the blue potentiometer on the module until its second LED switches on when you put a drop of water on it, and off when it's dry.
+
+## Firmware update over WiFi (no USB needed)
+
+With `npm run dev` running, build the firmware (`pio run -d firmware`) and restart `npm run dev`. It offers the new build as an update, and **Device → Firmware → Update** in the app installs it over WiFi. The board checks the image's SHA-256 before switching to it.
 
 ## Status LED
 
@@ -85,6 +93,7 @@ The values are stored on the device. The firmware handles either sensor directio
 ## Safety behaviour (built into the firmware)
 
 - The pump is forced **off** at power-up, before WiFi or anything else starts.
+- New devices start in **Manual** mode: nothing waters until you press Water now or switch to Auto. A manual command always wins over Auto.
 - The pump can never run longer than **Longest single watering** (maxPumpRunSec). Then it rests for the cooldown, for every source, manual included.
 - Rain pauses automatic watering (optional).
 - Sensor fault pauses automatic watering.

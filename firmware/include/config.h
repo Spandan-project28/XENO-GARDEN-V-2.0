@@ -2,12 +2,12 @@
 // Hardware + timing configuration. NO network secrets here: WiFi and broker credentials are
 // provisioned over Bluetooth by the app and stored in NVS (flash).
 
-#define XG_FW_VERSION "2.1.4"
+#define XG_FW_VERSION "2.2.0"
 
 // ── Pins (ESP32 DevKit) ──────────────────────────────────────────────────────
 #define PIN_DHT 4            // DHT11/DHT22 data
 #define PIN_SOIL 34          // capacitive soil sensor, analog (ADC1 — works while WiFi is on)
-#define PIN_RAIN 27          // rain sensor digital out, active LOW (INPUT_PULLUP)
+#define PIN_RAIN 27          // rain sensor digital out (either polarity: the dry level is learned at power-on)
 #define PIN_RELAY 26         // pump relay input
 #define RELAY_ACTIVE_LOW 1   // most relay modules switch ON when the input is LOW
 #define PIN_LED 2            // on-board status LED
@@ -42,6 +42,7 @@
 #define TELEMETRY_BUFFER 50           // readings kept while offline, flushed on reconnect
 #define MAX_SAVED_NETWORKS 5
 
-// Default calibration for a typical capacitive v1.2 sensor at 3.3 V / 11 dB attenuation.
+// Starting calibration for a capacitive v1.2 sensor at 3.3 V / 11 dB attenuation. Until the user
+// calibrates, the range widens to what the sensor really reads (e.g. ~3900 in air at 5 V).
 #define SOIL_DEFAULT_DRY_RAW 3000
 #define SOIL_DEFAULT_WET_RAW 1300

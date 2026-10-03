@@ -12,6 +12,7 @@
 #include "xg_dht.h"
 #include "xg_frames.h"
 #include "xg_pairing.h"
+#include "xg_sensors.h"
 #include "xg_shadow.h"
 
 static int g_failed = 0;
@@ -240,6 +241,56 @@ static void testDht() {
   CHECK(!decodeDht(ff, false, t, h), "line stuck high rejected (out of range)");
 }
 
+static void testRain() {
+  printf("rain sensor\n");
+  {  // usual module: DO high when dry, low when wet
+    RainDetector r;
+    for (int i = 0; i < 3; i++) CHECK(!r.update(true), "no rain while learning");
+    CHECK(r.learned(), "learned after 3 reads");
+    CHECK(!r.update(false) && !r.update(false), "two wet reads: still debouncing");
+    CHECK(r.update(false), "third wet read: rain");
+    CHECK(r.update(true) && r.update(true) && !r.update(true), "dry again after 3 reads");
+  }
+  {  // module that idles LOW (inverted, unpowered, or pot turned all the way): default is no rain
+    RainDetector r;
+    for (int i = 0; i < 10; i++) CHECK(!r.update(false), "idle low = no rain");
+    r.update(true);
+    r.update(true);
+    CHECK(r.update(true), "drops on an inverted module = rain");
+  }
+  {  // nothing connected (pull-up): never rain
+    RainDetector r;
+    bool any = false;
+    for (int i = 0; i < 20; i++) any |= r.update(true);
+    CHECK(!any, "unconnected pin never reports rain");
+  }
+  {  // one noisy read during learning doesn't flip the baseline
+    RainDetector r;
+    r.update(true);
+    r.update(false);
+    r.update(true);
+    CHECK(!r.update(true) && !r.update(true) && !r.update(true), "baseline = majority (high)");
+  }
+}
+
+static void testSoilRange() {
+  printf("soil range\n");
+  int dry = 3000, wet = 1300;
+  CHECK(widenSoilRange(3870, dry, wet, false, false) && dry == 3870, "5 V sensor in air widens dry");
+  float v = -1;
+  CHECK(rawToMoisture(3870, dry, wet, v) && v == 0.0f, "air = 0 %");
+  CHECK(rawToMoisture(2585, dry, wet, v) && fabsf(v - 50.0f) < 0.1f, "midpoint ~50 %");
+  CHECK(widenSoilRange(1100, dry, wet, false, false) && wet == 1100, "water widens wet");
+  CHECK(!widenSoilRange(2000, dry, wet, false, false), "inside range: no change");
+  CHECK(!widenSoilRange(4095, dry, wet, false, false) && dry == 3870, "rail high ignored");
+  CHECK(!widenSoilRange(10, dry, wet, false, false) && wet == 1100, "rail low ignored");
+  int d2 = 2800, w2 = 1250;
+  CHECK(!widenSoilRange(3500, d2, w2, true, true) && d2 == 2800, "measured calibration untouched");
+  int d3 = 500, w3 = 3500;  // inverted (resistive wiring)
+  CHECK(widenSoilRange(300, d3, w3, false, false) && d3 == 300, "inverted: dry widens down");
+  CHECK(widenSoilRange(3700, d3, w3, false, false) && w3 == 3700, "inverted: wet widens up");
+}
+
 int main(int argc, char** argv) {
   const char* vectors = argc > 1 ? argv[1] : "../packages/shared/test-vectors/automation.json";
   testVectors(vectors);
@@ -249,6 +300,8 @@ int main(int argc, char** argv) {
   testManualClock();
   testPairing();
   testDht();
+  testRain();
+  testSoilRange();
   printf("\n%d checks passed, %d failed\n", g_passed, g_failed);
   return g_failed ? 1 : 0;
 }

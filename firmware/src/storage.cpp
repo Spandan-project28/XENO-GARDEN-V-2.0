@@ -59,7 +59,7 @@ void saveCloud(const CloudConfig& c) {
 bool loadSettings(xg::DeviceSettings& s, xg::Mode& mode, uint32_t& appliedVersion) {
   String json = prefs.getString("settings", "");
   appliedVersion = prefs.getUInt("ver", 0);
-  mode = prefs.getUChar("mode", 0) == 1 ? xg::Mode::Manual : xg::Mode::Auto;
+  mode = prefs.getUChar("mode", 1) == 1 ? xg::Mode::Manual : xg::Mode::Auto;  // default: manual
   if (!json.length()) return false;
   return xg::settingsFromJson(std::string(json.c_str()), s);
 }

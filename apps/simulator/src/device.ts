@@ -64,7 +64,7 @@ export interface SimDeviceOptions {
 export class SimDevice {
   readonly hardwareId: string;
   garden: GardenState;
-  mode: DeviceMode = 'auto';
+  mode: DeviceMode = 'manual'; // like the real board: nothing waters until the user picks Auto
   settings: DeviceSettings = { ...defaultSettings };
   appliedVersion = 0;
   manual: ActiveManual | null = null;

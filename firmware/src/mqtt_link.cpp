@@ -108,7 +108,7 @@ static bool publishTelemetry(const TelemetrySnapshot& t) {
   if (t.ts) doc["ts"] = t.ts;
   if (t.soilValid) doc["soilMoisture"] = t.soil;
   else doc["soilMoisture"] = nullptr;
-  if (t.soilRaw >= 0 && t.soilValid) doc["soilRaw"] = t.soilRaw;
+  if (t.soilRaw >= 0) doc["soilRaw"] = t.soilRaw;  // also when out of range: shows the wiring problem
   else doc["soilRaw"] = nullptr;
   if (t.tempValid) doc["temperature"] = roundf(t.temp * 10) / 10;
   else doc["temperature"] = nullptr;

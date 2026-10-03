@@ -6,17 +6,35 @@
 #include "pump.h"
 #include "sensors.h"
 #include "state.h"
+#include "storage.h"
 #include "timebase.h"
+#include "xg_sensors.h"
 
 namespace control {
 
 static TaskHandle_t task = nullptr;
+static int64_t calSavedAt = 0;
+static bool calUnsaved = false;
 
 static void tick() {
   const SensorReading r = sensors::read();  // outside the lock (takes a few ms)
+  // An auto-widened soil range is kept across reboots, written at most once a minute.
+  if (calUnsaved && nowMs() - calSavedAt >= 60000) {
+    Calibration cal;
+    {
+      StateLock lock;
+      cal = gState.calibration;
+    }
+    storage::saveCalibration(cal);
+    calSavedAt = nowMs();
+    calUnsaved = false;
+  }
   StateLock lock;
   DeviceState& s = gState;
   const int64_t now = nowMs();
+
+  Calibration& cal = s.calibration;
+  if (xg::widenSoilRange(r.soilRaw, cal.dryRaw, cal.wetRaw, cal.dryMeasured, cal.wetMeasured)) calUnsaved = true;
 
   float moisture = NAN;
   const bool soilValid =

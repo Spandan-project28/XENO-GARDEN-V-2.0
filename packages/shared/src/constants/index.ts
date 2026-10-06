@@ -163,6 +163,9 @@ export const ERROR_CODES = [
   'INVALID_CLAIM_CODE',
   'DEVICE_OFFLINE',
   'INTERNAL',
+  /** Plant scan: no disease model connected (503) / the model failed to answer (502). */
+  'SCAN_UNAVAILABLE',
+  'SCAN_FAILED',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 

@@ -6,7 +6,9 @@ import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ConnectionBanner } from '@/components/ConnectionBanner';
 import { PushPrompt } from '@/components/PushPrompt';
+import { flags } from '@/config/flags';
 import { useTheme } from '@/design';
+import { LatestScanCard } from '@/features/scan';
 import { NearbyCard } from '@/features/setup/NearbyCard';
 import { errorMessage } from '@/lib/api';
 import { greeting } from '@/lib/format';
@@ -68,6 +70,7 @@ export function HomeScreen() {
         ) : (
           <>
             <Overview devices={list} />
+            {flags.plantScan ? <LatestScanCard now={now} /> : null}
             <PushPrompt />
             {list.map((d, i) => (
               <Animated.View key={d.id} entering={FadeInDown.delay(i * 60).springify().damping(18)}>

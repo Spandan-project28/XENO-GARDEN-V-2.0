@@ -9,9 +9,10 @@ its rule-based provider if this service is unreachable.
 """
 import os
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 
 from .model import load_model
+from .scan import ScanModelMissing, get_classifier
 from .schemas import PredictRequest, PredictResponse
 
 app = FastAPI(title="Xeno Garden ML", version="0.1.0")
@@ -32,3 +33,23 @@ def healthz() -> dict:
 @app.post("/v1/health/predict", response_model=PredictResponse, dependencies=[Depends(require_key)])
 def predict(req: PredictRequest) -> PredictResponse:
     return model.predict(req)
+
+
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
+
+@app.post("/v1/scan/predict", dependencies=[Depends(require_key)])
+async def scan_predict(image: UploadFile = File(...)) -> dict:
+    """Plant Scan: leaf photo (multipart field "image") -> top predictions."""
+    data = await image.read()
+    if not data or len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=400, detail="send one image up to 8 MB in the 'image' field")
+    try:
+        clf = get_classifier()
+    except ScanModelMissing as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    try:
+        predictions = clf.predict(data)
+    except Exception as e:  # unreadable / not an image
+        raise HTTPException(status_code=400, detail="could not read the image") from e
+    return {"model": {"name": clf.name, "version": "1"}, "predictions": predictions}

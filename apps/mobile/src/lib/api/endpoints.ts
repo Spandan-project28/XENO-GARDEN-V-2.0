@@ -20,6 +20,10 @@ import {
   pumpCommandResponse,
   pumpEvent,
   readingsResponse,
+  scanList,
+  scanPublic,
+  scanServiceStatus,
+  scanUploadResponse,
   userPublic,
   type AlertStatus,
   type ClaimBody,
@@ -97,6 +101,19 @@ export function createEndpoints(api: ApiClient) {
       removeToken: (token: string) => api.delete('/v1/me/push-tokens', { token }, { schema: ok }),
       getPrefs: () => api.get('/v1/me/notification-prefs', { schema: notificationPrefs }),
       setPrefs: (prefs: NotificationPrefs) => api.put('/v1/me/notification-prefs', prefs, { schema: notificationPrefs }),
+    },
+
+    scans: {
+      status: () => api.get('/v1/scans/status', { schema: scanServiceStatus }),
+      uploadUrl: (contentType: 'image/jpeg' | 'image/png' | 'image/webp') =>
+        api.post('/v1/scans/upload-url', { contentType }, { schema: scanUploadResponse }),
+      // The model may take a while (cold start, slow network): allow up to a minute.
+      create: (body: { photoId: string; deviceId?: string | null }) =>
+        api.post('/v1/scans', body, { schema: scanPublic, timeoutMs: 60_000 }),
+      list: (q: { deviceId?: string; limit?: number; cursor?: string | null } = {}) =>
+        api.get('/v1/scans', { query: { deviceId: q.deviceId, limit: q.limit, cursor: q.cursor }, schema: scanList }),
+      get: (id: string) => api.get(`/v1/scans/${id}`, { schema: scanPublic }),
+      remove: (id: string) => api.delete(`/v1/scans/${id}`, undefined, { schema: ok }),
     },
 
     plants: {

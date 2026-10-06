@@ -7,6 +7,7 @@ import { notificationRoutes } from './notifications/routes.js';
 import { plantRoutes } from './plants/routes.js';
 import { mediaRoutes } from './media/routes.js';
 import { telemetryRoutes } from './telemetry/routes.js';
+import { scanRoutes } from './scans/routes.js';
 
 /**
  * Registers every feature module under /v1. To add a feature: create `modules/<name>/routes.ts`
@@ -21,4 +22,5 @@ export const registerModules: FastifyPluginAsync = async (app) => {
   await app.register(notificationRoutes);
   await app.register(plantRoutes);
   await app.register(mediaRoutes);
+  await app.register(scanRoutes);
 };

@@ -638,3 +638,26 @@ Until those are done, everything is developed and verified against local Docker 
 - ADR-017: **Auto-setup with a phone-side WiFi vault.** This is the closest thing to "connects to whatever internet I'm on" that the OS allows.
 - ADR-018: **Device-initiated rejoin mode without a claim code.** It self-heals WiFi changes without reflashing and without opening a takeover path.
 - ADR-019: **Local Gradle build of an Expo dev-client APK** (no EAS account needed for testing). The JS still comes from Metro, so no server address is baked in. Production builds still go through EAS with `EXPO_PUBLIC_API_URL`.
+
+## 16. Plant Scan (v0.2.1, branch ML-INTEGRATE-V.0.2.1) — leaf disease detection
+
+**Flow:** Xeno app → **Scan** tab → camera permission → take a photo or pick one from the gallery → preview (Analyze / Retake) → upload (signed URL, existing media store) → server sends the image to the configured **disease model API** → the answer is normalised to one standard result → crop, condition, confidence, severity, treatment, prevention, plus **sensor tips** from the linked Xeno device (humidity, soil, rain, temperature) → result screen → the latest scan appears on the Garden dashboard; scan history is on the Scan tab.
+
+**Hard rules for this work:**
+- Never `git add` or `git commit`: the user commits by hand.
+- The irrigation features must not change. Everything is additive: a new backend module (`modules/scans/`, its own DB collection `plant_scans`, its own config), a new mobile feature (`features/scan/`), a new tab and a dashboard card behind `flags.plantScan`.
+- A broken or missing model config must never stop the server. Scan then reports "model not connected" and everything else runs.
+
+**Model plug (the only part that needs the user's model):** `SCAN_API_*` variables in `apps/backend/.env` (see `docs/PLANT_SCAN.md`).
+- *Presets:* `generic` / `huggingface` / `roboflow` / `kindwise` / `xeno-ml`.
+- *Request formats:* multipart, base64 JSON, raw bytes.
+- *Responses:* auto-detected (label/class/name + confidence/score/probability, arrays or maps), with optional JSON-path overrides.
+- *Labels:* any wording (PlantVillage `Tomato___Early_blight`, "Tomato with Early Blight", "early blight"…) is matched to a built-in disease catalogue with advice; unknown labels still get category-based advice.
+
+**Tasks:**
+- [x] P11.1 Shared contract: `schemas/scan.ts` (scanPublic, scanStatus, create/upload bodies), error codes SCAN_UNAVAILABLE (503) / SCAN_FAILED (502).
+- [x] P11.2 Backend `modules/scans`: config (safe parse), disease catalogue + label matcher, model adapter (presets, request formats, response auto-detection), sensor tips, service, routes (`/v1/scans/status`, `/upload-url`, `POST /scans`, list, get, delete), DB model.
+- [x] P11.3 Backend tests: unit (labels, parsing per preset, tips) + int (full flow against a real fake HTTP model server; not configured → 503; model down → 502; ownership).
+- [x] P11.4 Mobile: API group, Scan tab, capture/preview/analyze flow, result screen, recent scans, dashboard card, flag; tests.
+- [x] P11.5 Local real model (optional): `services/ml` image endpoint with a public PlantVillage classifier, so the feature runs end to end before the user's model exists (`SCAN_API_PRESET=xeno-ml`).
+- [x] P11.6 Docs: `docs/PLANT_SCAN.md` (connect your model in 2 minutes), PROGRESS; full regression run of every existing suite.

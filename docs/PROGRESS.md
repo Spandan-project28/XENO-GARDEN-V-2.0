@@ -389,3 +389,22 @@ Format: `## YYYY-MM-DD — <task id> <title>` then *Changed*, *Verified*, *Follo
 - **Default mode is now Manual** (backend `initialDesired`, firmware default + NVS default, simulator). Manual commands already win over Auto in `xg::evaluate`.
 - **USB serial on the bench is corrupt** (bit 0 flips: `0xC0` arrives as `0xC1`), so esptool can't connect at any baud rate. `npm run dev` now serves the built firmware over HTTPS (self-signed cert, SHA-256-verified on the device) as the server's firmware release. The board was updated 2.1.4 → 2.2.0 over WiFi.
 - *Verified on the real board after the update:* rain=false, mode manual/idle, soil raw 3863–3872 → 0–0.2 %, DHT 25.8 °C / 81 %, pump ON in 0.67 s / OFF in 0.68 s. Firmware native 276/276, ESP32 build OK, backend 32 unit + 103 int + 7 e2e, simulator 16, tools 7, lint clean.
+
+## 2026-10-07 — Plant Scan (branch ML-INTEGRATE-V.0.2.1, uncommitted: the user commits by hand)
+- **Feature.** Scan tab → camera/gallery (permission handling, square crop) → preview + garden link → upload (signed URL) → disease model → result. The result has the condition, crop, confidence bar, severity, treatment steps, prevention, alternatives, and **sensor tips** from the linked Xeno device (humidity, soil, rain, heat). The latest scan shows on the Garden dashboard.
+- **Model plug.** `SCAN_API_*` in `apps/backend/.env`.
+  - *Presets:* generic, huggingface, roboflow, kindwise, xeno-ml.
+  - *Request formats:* 4 (multipart, base64 JSON, raw bytes, base64 form).
+  - *Responses:* read automatically; dot-path overrides for unusual APIs.
+  - *Labels:* any wording maps to a 30-condition catalogue with advice.
+  - *Failures:* clear messages per case (bad key, quota, cold start, timeout, unreadable).
+  - *Safety:* the key is never logged or sent to the phone, and a broken config never stops the server.
+- **Local stand-in model.** `services/ml` `POST /v1/scan/predict` runs the ONNX MobileNetV2 PlantVillage model (`python -m app.fetch_model`, 9 MB, git-ignored). `npm run dev` starts it automatically when no API is configured. On 60 real PlantVillage photos, the full chain (model → matcher) got the right condition on 54/60 (90 %). 4 of the 6 misses were shown as "Not sure", and only 2 were confidently wrong (look-alike diseases).
+- **Irrigation untouched.**
+  - Code is additive only: a new backend module and collection `plant_scans`, a new mobile feature, a tab and a dashboard card behind `flags.plantScan`.
+  - Existing files changed by one or two lines each: module registration, 2 error codes, a shared export, the scans endpoint group, query keys, an optional per-request timeout in the API client, and the tab/dashboard hooks.
+- **Incident, fixed.** `import { models } from 'mongoose'` passed vitest but crashed the real server at startup (no such named ESM export). The running dev server hot-reloaded it and stayed down until the fix. The board was already offline (last seen 19:49 UTC), so no device was affected. New guard: `test/unit/realNodeImports.test.ts` loads every module under real Node; it fails on the original bug.
+- **Verified.**
+  - Backend: unit 132, int 109 (6 new, including a real HTTP model server per API style), e2e 7.
+  - Other suites: shared 65, simulator 16, tools 7, ML pytest 7 (+1 skipped by design), mobile 167 (11 new); lint and types clean.
+  - Live: the server plus the local model, with a real tomato late-blight photo → "Late blight · Tomato · 99.9 % · high · 3 treatment steps" in 36 ms (first call 386 ms).

@@ -47,6 +47,8 @@ export interface RequestOptions<T> {
   /** Send the access token (default true). */
   auth?: boolean;
   signal?: AbortSignal;
+  /** Overrides the client's default timeout for slow calls (e.g. plant scans). */
+  timeoutMs?: number;
 }
 
 export class ApiClient {
@@ -116,7 +118,7 @@ export class ApiClient {
     if (!base) throw new ApiError(0, 'NOT_CONFIGURED', 'The app is not connected to a server');
     const url = base + path + toQuery(opts.query);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.o.timeoutMs ?? 15_000);
+    const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? this.o.timeoutMs ?? 15_000);
     opts.signal?.addEventListener('abort', () => controller.abort());
     try {
       return await (this.o.fetchImpl ?? fetch)(url, {

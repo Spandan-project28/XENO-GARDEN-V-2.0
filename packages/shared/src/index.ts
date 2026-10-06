@@ -5,6 +5,7 @@ export * from './schemas/device.js';
 export * from './schemas/telemetry.js';
 export * from './schemas/alert.js';
 export * from './schemas/plant.js';
+export * from './schemas/scan.js';
 export * from './mqtt/index.js';
 export * from './automation/index.js';
 export * from './realtime/index.js';

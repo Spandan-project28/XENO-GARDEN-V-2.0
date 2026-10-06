@@ -17,8 +17,12 @@
  * • If the firmware has been built (firmware/.pio/build/esp32dev/firmware.bin), it is offered as a
  *   firmware update over WiFi: the app's "Update firmware" button installs it on boards that run
  *   an older version — no USB cable needed.
+ * • Plant Scan: if no disease model API is configured in apps/backend/.env (SCAN_API_URL /
+ *   SCAN_API_PRESET) and the local model is downloaded (services/ml: python -m app.fetch_model),
+ *   the local model service is started too, so leaf scans work out of the box. Optional: any
+ *   problem here is logged and the irrigation server runs as usual.
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
@@ -136,6 +140,55 @@ async function localFirmwareRelease(host) {
   };
 }
 
+const SCAN_ML_PORT = 8000;
+
+/** Python launcher that has the scan model's packages, or null. */
+function findPython() {
+  const check = 'import onnxruntime, fastapi, uvicorn, multipart, PIL';
+  for (const [cmd, pre] of [['py', ['-3']], ['python', []], ['python3', []]]) {
+    const r = spawnSync(cmd, [...pre, '-c', check], { stdio: 'ignore', timeout: 20_000 });
+    if (r.status === 0) return [cmd, pre];
+  }
+  return null;
+}
+
+/**
+ * Starts services/ml for Plant Scan when nothing else is configured. Returns the backend env
+ * that points Plant Scan at it ({} when the user's own model API is set up, or it can't start).
+ */
+async function localScanModel() {
+  const backendEnv = join(root, 'apps', 'backend', '.env');
+  const own = /^[ \t]*SCAN_API_(URL|PRESET)[ \t]*=[ \t]*[^\s#]/m;
+  if (process.env.SCAN_API_URL || process.env.SCAN_API_PRESET || (existsSync(backendEnv) && own.test(readFileSync(backendEnv, 'utf8')))) {
+    log('Plant Scan: using the model API set in apps/backend/.env');
+    return {};
+  }
+  const mlDir = join(root, 'services', 'ml');
+  if (!existsSync(join(mlDir, 'models', 'plant-disease', 'model.onnx'))) {
+    log('Plant Scan: no model yet (add your API to apps/backend/.env, or: cd services/ml && python -m app.fetch_model)');
+    return {};
+  }
+  if (await portInUse(SCAN_ML_PORT)) {
+    log(`Plant Scan: port ${SCAN_ML_PORT} is busy, assuming the local model service is already running`);
+    return { SCAN_API_PRESET: 'xeno-ml', SCAN_API_URL: `http://127.0.0.1:${SCAN_ML_PORT}/v1/scan/predict` };
+  }
+  const py = findPython();
+  if (!py) {
+    log('Plant Scan: Python packages missing (cd services/ml && pip install -r requirements.txt), scans disabled');
+    return {};
+  }
+  const child = spawn(py[0], [...py[1], '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', String(SCAN_ML_PORT), '--log-level', 'warning'], {
+    cwd: mlDir,
+    env: { ...process.env, ML_API_KEY: '' },
+    stdio: 'inherit',
+  });
+  child.on('error', (e) => log(`Plant Scan: local model service failed to start (${e.message})`));
+  child.on('exit', (code) => code && log(`Plant Scan: local model service stopped (code ${code})`));
+  children.push(child);
+  log(`Plant Scan: local leaf-disease model on 127.0.0.1:${SCAN_ML_PORT} (PlantVillage MobileNetV2)`);
+  return { SCAN_API_PRESET: 'xeno-ml', SCAN_API_URL: `http://127.0.0.1:${SCAN_ML_PORT}/v1/scan/predict`, SCAN_API_MODEL_NAME: 'Xeno local model (PlantVillage)' };
+}
+
 const children = [];
 function run(name, cmd, cmdArgs, env) {
   const child = spawn(cmd, cmdArgs, { cwd: root, env: { ...process.env, ...env }, stdio: 'inherit', shell: process.platform === 'win32' });
@@ -199,6 +252,11 @@ await new Promise((resolve, reject) =>
   ),
 );
 
+const scanEnv = await localScanModel().catch((e) => {
+  log(`Plant Scan: local model not started (${e.message})`);
+  return {};
+});
+
 run('backend', 'npm', ['run', 'dev', '-w', '@xeno/backend'], {
   NODE_ENV: 'development',
   PORT: String(port),
@@ -210,6 +268,7 @@ run('backend', 'npm', ['run', 'dev', '-w', '@xeno/backend'], {
   DEVICE_BROKER_PORT: String(mqttPort),
   DEVICE_BROKER_TLS: 'false',
   ...firmwareRelease,
+  ...scanEnv,
   ...devSecrets(),
 });
 

@@ -12,6 +12,8 @@ const STATUS: Record<ErrorCode, number> = {
   INVALID_CLAIM_CODE: 403,
   DEVICE_OFFLINE: 409,
   INTERNAL: 500,
+  SCAN_UNAVAILABLE: 503,
+  SCAN_FAILED: 502,
 };
 
 /** Expected, user-facing error. Anything else thrown becomes a 500 INTERNAL. */

@@ -12,4 +12,8 @@ export const qk = {
   plants: ['plants'] as const,
   plantHealth: (id: string) => ['plants', id, 'health'] as const,
   notificationPrefs: ['notification-prefs'] as const,
+  scansAll: ['scans'] as const,
+  scanStatus: ['scans', 'status'] as const,
+  scans: (deviceId?: string) => ['scans', 'list', deviceId ?? 'all'] as const,
+  scan: (id: string) => ['scans', 'item', id] as const,
 };

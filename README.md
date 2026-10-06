@@ -42,6 +42,7 @@ The build plan, and the source of truth for the whole project, is [`implementati
 - **Honest UI.** Commands show "Starting…" until the device confirms. Settings show "Syncing to device…". Offline states are explained in plain words.
 - **Real history.** Real time ranges (24 h → 90 d) with automatic rollups, pump sessions drawn on the chart, and a touch scrubber.
 - **Alerts that aren't spam.** They're debounced, deduplicated (×37 instead of 37 alerts), cleared automatically, and pushed to your phone with a deep link.
+- **Plant Scan (leaf disease detection).** Photograph a leaf: you get the condition, the confidence, treatment and prevention advice, plus tips from that garden's live sensors. Any model API plugs in through `apps/backend/.env` with no code changes. A local PlantVillage model is included. See [PLANT_SCAN.md](docs/PLANT_SCAN.md).
 - **ML-ready.** Plant health uses a provider interface. The rule-based provider ships today, and a model service plugs in with one environment variable.
 - **Built to change.** Every colour, size and animation comes from design tokens. Features are self-contained modules. Every contract is shared.
 
@@ -96,6 +97,7 @@ CI runs all of it (`.github/workflows/ci.yml`).
 - [Deployment](docs/DEPLOY.md)
 - [Security](docs/SECURITY.md)
 - [Plugging in an ML model](docs/ML_INTEGRATION.md)
+- [Plant Scan: connect your disease model](docs/PLANT_SCAN.md)
 - [Progress log](docs/PROGRESS.md)
 
 ## Configuration
